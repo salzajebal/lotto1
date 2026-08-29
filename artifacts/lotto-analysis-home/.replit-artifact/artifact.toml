@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "로또 분석 번호 홈페이지"
+description = "당첨 후기와 실제 당첨 사례를 중심으로 멤버십 분석 서비스, 커뮤니티, 고객센터, 카카오톡 상담을 제공하는 로또 분석 홈페이지입니다."
+version = "1.0.0"
+id = "artifacts/lotto-analysis-home"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 19072
+
+[services.development]
+run = "pnpm --filter @workspace/lotto-analysis-home run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/lotto-analysis-home", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/lotto-analysis-home/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19072"
+BASE_PATH = "/"
