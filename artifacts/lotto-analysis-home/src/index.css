@@ -266,6 +266,7 @@ a { color: inherit; text-decoration: none; }
 .form { display: grid; gap: 13px; }.form label { color: #c2c3c3; font-size: 12px; }.form input, .form textarea { width: 100%; margin-top: 7px; padding: 12px 13px; outline: none; border: 1px solid #363b43; background: #101318; color: #efede6; }.form textarea { min-height: 116px; resize: vertical; }.form input:focus, .form textarea:focus { border-color: #d8ae47; }.form .gold-button { margin-top: 7px; }
 .auth-switch { display: flex; gap: 18px; margin-bottom: 22px; border-bottom: 1px solid #353941; }.auth-switch button { padding: 0 0 12px; border: 0; background: transparent; color: #737a85; font-size: 13px; }.auth-switch button.active { color: #e8bb51; border-bottom: 2px solid #e8bb51; }
 .success-note { padding: 17px; border: 1px solid #55715a; background: rgba(93,150,104,.09); color: #b7d1bb; font-size: 13px; line-height: 1.6; }
+.form-error { padding: 12px 13px; border: 1px solid #7b3c3c; background: rgba(166,55,55,.1); color: #f0a6a6; font-size: 12px; line-height: 1.5; }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } } @keyframes modalIn { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
 
 @media (max-width: 860px) {
@@ -743,4 +744,304 @@ a { color: inherit; text-decoration: none; }
   .winner-card { min-height: 285px; }
   .hero-quick-grid { grid-template-columns: 1fr; }
   .hero-quick-card { min-height: 132px; }
+}
+
+/* Variant A · dark data center treatment
+   The photo hero above intentionally keeps its approved layout and imagery. */
+.lotto-app {
+  background: #0d1118;
+}
+
+.lotto-app .ticker {
+  background: #101722;
+  border-color: #26364b;
+}
+
+.lotto-app .ticker-inner {
+  color: #94a0b4;
+}
+
+.lotto-app .proof-section,
+.lotto-app .community-section,
+.lotto-app .trust-section {
+  background: #0d1118;
+}
+
+.lotto-app .video-section,
+.lotto-app .method-section,
+.lotto-app .review-section {
+  background: #101722;
+  border-top: 1px solid #26364b;
+  border-bottom: 1px solid #26364b;
+}
+
+.lotto-app .section-title {
+  color: #f1f5f9;
+}
+
+.lotto-app .section-copy,
+.lotto-app .proof-lede p,
+.lotto-app .membership-intro p,
+.lotto-app .review-intro p {
+  color: #94a0b4;
+}
+
+.lotto-app .proof-stat {
+  border-color: #2b3b51;
+}
+
+.lotto-app .proof-stat strong,
+.lotto-app .story-amount,
+.lotto-app .score-number {
+  color: #f0c95f;
+}
+
+.lotto-app .story-list {
+  display: grid;
+  gap: 12px;
+  border-top: 0;
+}
+
+.lotto-app .story {
+  grid-template-columns: 72px minmax(0, 1fr) auto;
+  gap: 18px;
+  padding: 22px 20px;
+  border: 1px solid #2b3b51;
+  border-radius: 16px;
+  background: #151c28;
+  transition: border-color .25s ease, transform .25s ease, background .25s ease;
+}
+
+.lotto-app .story:hover {
+  padding-left: 20px;
+  border-color: #5475a6;
+  background: #182335;
+  transform: translateY(-2px);
+}
+
+.lotto-app .story-rank {
+  width: 54px;
+  height: 54px;
+  border-color: #5475a6;
+  color: #9ec1ff;
+}
+
+.lotto-app .story-meta {
+  color: #8491a5;
+}
+
+.lotto-app .story-title {
+  color: #e7edf6;
+}
+
+.lotto-app .video-card {
+  min-height: 430px;
+  border: 1px solid #2b3b51;
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at 76% 42%, rgb(66 103 165 / 0.24), transparent 20%),
+    linear-gradient(120deg, #151c28, #101722 72%);
+  box-shadow: 0 24px 55px rgb(0 0 0 / 0.2);
+}
+
+.lotto-app .video-card:hover {
+  border-color: #5475a6;
+}
+
+.lotto-app .video-play {
+  background: #e8bb51;
+  border-color: #f4d27b;
+  box-shadow: 0 12px 32px rgb(232 187 81 / 0.22);
+}
+
+.lotto-app .method-grid {
+  gap: 18px;
+  border-top: 0;
+}
+
+.lotto-app .method-item {
+  min-height: 260px;
+  padding: 28px;
+  border: 1px solid #2b3b51;
+  border-radius: 24px;
+  background: #151c28;
+  transition: border-color .25s ease, background .25s ease, transform .25s ease;
+}
+
+.lotto-app .method-item:not(:first-child) {
+  padding-left: 28px;
+}
+
+.lotto-app .method-item:last-child {
+  border-right: 1px solid #2b3b51;
+}
+
+.lotto-app .method-item:hover {
+  border-color: #5475a6;
+  background: #182335;
+  transform: translateY(-3px);
+}
+
+.lotto-app .method-no {
+  color: #9ec1ff;
+}
+
+.lotto-app .method-item h3 {
+  color: #f1f5f9;
+}
+
+.lotto-app .method-item p {
+  color: #94a0b4;
+}
+
+.lotto-app .membership-section {
+  background:
+    radial-gradient(circle at 85% 40%, rgb(62 102 169 / 0.13), transparent 35%),
+    #0d1118;
+}
+
+.lotto-app .price-card {
+  padding: 38px;
+  border: 1px solid #3a4a61;
+  border-radius: 32px;
+  background: #151c28;
+  box-shadow: 0 24px 60px rgb(0 0 0 / 0.25);
+}
+
+.lotto-app .popular {
+  border-color: #5475a6;
+  color: #9ec1ff;
+  border-radius: 999px;
+}
+
+.lotto-app .price-label {
+  color: #9ec1ff;
+}
+
+.lotto-app .price-card h3,
+.lotto-app .price strong {
+  color: #f1f5f9;
+}
+
+.lotto-app .price {
+  border-color: #2b3b51;
+}
+
+.lotto-app .feature-list {
+  color: #c3ccda;
+}
+
+.lotto-app .feature-list svg {
+  color: #9ec1ff;
+}
+
+.lotto-app .consult-box {
+  color: #94a0b4;
+}
+
+.lotto-app .consult-box strong {
+  color: #e7edf6;
+}
+
+.lotto-app .community-grid {
+  gap: 18px;
+}
+
+.lotto-app .community-main,
+.lotto-app .community-side {
+  border: 1px solid #2b3b51;
+  border-radius: 24px;
+  background: #151c28;
+}
+
+.lotto-app .community-main:hover,
+.lotto-app .community-side:hover {
+  border-color: #5475a6;
+}
+
+.lotto-app .community-tags span {
+  border: 1px solid #2b3b51;
+  border-radius: 999px;
+  background: #1b2636;
+  color: #b4c0d2;
+}
+
+.lotto-app .community-side {
+  background: #101722;
+}
+
+.lotto-app .review-card {
+  border: 1px solid #2b3b51;
+  border-left: 3px solid #5475a6;
+  border-radius: 14px;
+  background: #151c28;
+}
+
+.lotto-app .review-card blockquote {
+  color: #dbe4f1;
+}
+
+.lotto-app .badges {
+  border-color: #2b3b51;
+}
+
+.lotto-app .badge {
+  border-color: #2b3b51;
+  background: #101722;
+}
+
+.lotto-app .badge-mark {
+  border-color: #5475a6;
+  color: #9ec1ff;
+}
+
+.lotto-app .badge strong {
+  color: #dbe4f1;
+}
+
+.lotto-app .support-strip {
+  border-color: #2b3b51 !important;
+}
+
+.lotto-app .footer {
+  background: #080c13;
+  border-top: 1px solid #26364b;
+}
+
+@media (max-width: 860px) {
+  .lotto-app .story {
+    grid-template-columns: 62px minmax(0, 1fr);
+  }
+
+  .lotto-app .story-amount {
+    grid-column: 2;
+  }
+
+  .lotto-app .method-grid {
+    gap: 12px;
+  }
+
+  .lotto-app .method-item,
+  .lotto-app .method-item:not(:first-child) {
+    padding: 22px;
+  }
+}
+
+@media (max-width: 600px) {
+  .lotto-app .price-card {
+    padding: 26px 22px;
+    border-radius: 24px;
+  }
+
+  .lotto-app .method-item,
+  .lotto-app .method-item:not(:first-child) {
+    padding: 20px 16px;
+    border-radius: 18px;
+  }
+
+  .lotto-app .community-main,
+  .lotto-app .community-side,
+  .lotto-app .video-card {
+    border-radius: 18px;
+  }
 }

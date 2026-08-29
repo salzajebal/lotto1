@@ -15,6 +15,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
 import { Route, Switch, useLocation, Router as WouterRouter } from 'wouter';
+import AdminApp from '@/admin/AdminApp';
 
 const queryClient = new QueryClient();
 
@@ -59,6 +60,8 @@ function Home() {
   const [modal, setModal] = useState<ModalName>(null);
   const [authMode, setAuthMode] = useState<'login' | 'join'>('login');
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
   const revealRoot = useRef<HTMLDivElement>(null);
 
@@ -86,12 +89,50 @@ function Home() {
 
   const openModal = (name: ModalName) => {
     setSubmitted(false);
+    setSubmitError('');
     setModal(name);
     setMenuOpen(false);
   };
-  const submitForm = (event: FormEvent<HTMLFormElement>) => {
+  const submitForm = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setSubmitted(true);
+    const formData = new FormData(event.currentTarget);
+    setSubmitting(true);
+    setSubmitError('');
+    try {
+      if (modal === 'support' || modal === 'membership') {
+        const isMembership = modal === 'membership';
+        const name = String(formData.get('name') || (isMembership ? '멤버십 상담 신청자' : '홈페이지 문의자'));
+        const contact = String(formData.get('contact') || '');
+        const category = String(formData.get('category') || (isMembership ? '멤버십 상담' : '일반 문의'));
+        const message = String(formData.get('message') || '');
+        const response = await fetch('/api/support', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, contact, category, message }),
+        });
+        if (!response.ok) throw new Error('문의 접수에 실패했습니다. 입력 내용을 확인해주세요.');
+      } else if (modal === 'review') {
+        const drawAndRank = String(formData.get('drawAndRank') || '');
+        const drawMatch = drawAndRank.match(/\d+/);
+        const response = await fetch('/api/reviews', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            memberName: String(formData.get('memberName') || ''),
+            drawNumber: drawMatch ? Number(drawMatch[0]) : 1,
+            rank: drawAndRank.includes('1등') ? '1등' : drawAndRank.includes('2등') ? '2등' : '3등',
+            amount: 0,
+            content: String(formData.get('content') || ''),
+          }),
+        });
+        if (!response.ok) throw new Error('후기 접수에 실패했습니다. 입력 내용을 확인해주세요.');
+      }
+      setSubmitted(true);
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : '처리 중 오류가 발생했습니다.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -316,17 +357,17 @@ function Home() {
         </div>
       </footer>
 
-      {modal === 'review' && <Modal title="당첨 후기를 남겨주세요" description="회원님의 기록이 다음 사람에게는 가장 현실적인 기준이 됩니다." onClose={() => setModal(null)}>{submitted ? <div className="success-note">후기가 접수되었습니다. 검토 후 당첨 아카이브에 반영됩니다.</div> : <form className="form" onSubmit={submitForm}><label>닉네임<input required placeholder="공개할 이름을 입력하세요" /></label><label>당첨 회차<input required placeholder="예: 1184회 / 3등" /></label><label>후기<textarea required placeholder="분석을 시작한 계기와 경험을 들려주세요." /></label><button className="gold-button" type="submit">후기 제출하기 <ArrowRight size={15} /></button></form>}</Modal>}
-      {modal === 'support' && <Modal title="고객센터 문의" description="대표번호 대신 카카오톡 채널로 빠르고 정확하게 상담합니다." onClose={() => setModal(null)}>{submitted ? <div className="success-note">문의가 접수되었습니다. 카카오톡 채널에서 답변을 확인해주세요.</div> : <form className="form" onSubmit={submitForm}><label>문의 유형<input required placeholder="멤버십 / 분석 번호 / 결제 등" /></label><label>연락받을 카카오톡 아이디<input required placeholder="카카오톡 채널 상담을 위해 필요합니다" /></label><label>문의 내용<textarea required placeholder="궁금한 내용을 남겨주세요." /></label><button className="gold-button" type="submit">문의 접수하기 <MessageCircle size={15} /></button></form>}</Modal>}
+      {modal === 'review' && <Modal title="당첨 후기를 남겨주세요" description="회원님의 기록이 다음 사람에게는 가장 현실적인 기준이 됩니다." onClose={() => setModal(null)}>{submitted ? <div className="success-note">후기가 접수되었습니다. 검토 후 당첨 아카이브에 반영됩니다.</div> : <form className="form" onSubmit={submitForm}><label>닉네임<input name="memberName" required placeholder="공개할 이름을 입력하세요" /></label><label>당첨 회차<input name="drawAndRank" required placeholder="예: 1184회 / 3등" /></label><label>후기<textarea name="content" required placeholder="분석을 시작한 계기와 경험을 들려주세요." /></label>{submitError && <div className="form-error">{submitError}</div>}<button className="gold-button" type="submit" disabled={submitting}>{submitting ? '접수 중...' : '후기 제출하기'} <ArrowRight size={15} /></button></form>}</Modal>}
+      {modal === 'support' && <Modal title="고객센터 문의" description="대표번호 대신 카카오톡 채널로 빠르고 정확하게 상담합니다." onClose={() => setModal(null)}>{submitted ? <div className="success-note">문의가 접수되었습니다. 카카오톡 채널에서 답변을 확인해주세요.</div> : <form className="form" onSubmit={submitForm}><label>문의 유형<input name="category" required placeholder="멤버십 / 분석 번호 / 결제 등" /></label><label>연락받을 카카오톡 아이디<input name="contact" required placeholder="카카오톡 채널 상담을 위해 필요합니다" /></label><label>문의 내용<textarea name="message" required placeholder="궁금한 내용을 남겨주세요." /></label>{submitError && <div className="form-error">{submitError}</div>}<button className="gold-button" type="submit" disabled={submitting}>{submitting ? '접수 중...' : '문의 접수하기'} <MessageCircle size={15} /></button></form>}</Modal>}
       {modal === 'auth' && <Modal title={authMode === 'login' ? '다시 만나서 반갑습니다' : '골든 픽 시작하기'} description={authMode === 'login' ? '분석 리포트와 커뮤니티를 이어서 확인하세요.' : '매주 새로운 분석 기록을 가장 먼저 받아보세요.'} onClose={() => setModal(null)}><div className="auth-switch"><button className={authMode === 'login' ? 'active' : ''} onClick={() => setAuthMode('login')}>로그인</button><button className={authMode === 'join' ? 'active' : ''} onClick={() => setAuthMode('join')}>회원가입</button></div>{submitted ? <div className="success-note">{authMode === 'login' ? '로그인 준비가 완료되었습니다. 곧 멤버 공간으로 이동합니다.' : '가입 신청이 접수되었습니다. 카카오톡 채널에서 안내를 확인해주세요.'}</div> : <form className="form" onSubmit={submitForm}>{authMode === 'join' && <label>이름<input required placeholder="이름을 입력하세요" /></label>}<label>이메일<input required type="email" placeholder="name@example.com" /></label><label>비밀번호<input required type="password" placeholder="6자 이상 입력하세요" /></label><button className="gold-button" type="submit">{authMode === 'login' ? '로그인하기' : '회원가입하기'} <ArrowRight size={15} /></button></form>}</Modal>}
-      {modal === 'membership' && <Modal title="멤버십 상담 신청" description="신청 내용을 확인한 뒤 카카오톡 채널로 자세한 안내를 드립니다." onClose={() => setModal(null)}>{submitted ? <div className="success-note">상담 신청이 접수되었습니다. 카카오톡 채널에서 곧 안내드리겠습니다.</div> : <form className="form" onSubmit={submitForm}><label>성함<input required placeholder="상담받으실 성함" /></label><label>관심 플랜<input defaultValue="3등 분석 번호 멤버십 / 330,000원" readOnly /></label><label>상담 메모<textarea placeholder="1·2등 상담 등 남기고 싶은 내용을 적어주세요." /></label><button className="gold-button" type="submit">상담 신청하기 <ArrowRight size={15} /></button></form>}</Modal>}
+      {modal === 'membership' && <Modal title="멤버십 상담 신청" description="신청 내용을 확인한 뒤 카카오톡 채널로 자세한 안내를 드립니다." onClose={() => setModal(null)}>{submitted ? <div className="success-note">상담 신청이 접수되었습니다. 카카오톡 채널에서 곧 안내드리겠습니다.</div> : <form className="form" onSubmit={submitForm}><label>성함<input name="name" required placeholder="상담받으실 성함" /></label><label>카카오톡 아이디<input name="contact" required placeholder="답변받으실 카카오톡 아이디" /></label><label>관심 플랜<input name="category" defaultValue="3등 분석 번호 멤버십 / 330,000원" readOnly /></label><label>상담 메모<textarea name="message" required placeholder="1·2등 상담 등 남기고 싶은 내용을 적어주세요." /></label>{submitError && <div className="form-error">{submitError}</div>}<button className="gold-button" type="submit" disabled={submitting}>{submitting ? '신청 중...' : '상담 신청하기'} <ArrowRight size={15} /></button></form>}</Modal>}
       {modal === 'video' && <Modal title="당첨 회원 인터뷰" description="실제 회원의 이야기를 담은 골든 픽 인터뷰입니다." onClose={() => setModal(null)}><div style={{ aspectRatio: '16 / 9', display: 'grid', placeItems: 'center', background: 'radial-gradient(circle, #7b571b, #101318 63%)', border: '1px solid #685127' }}><span className="video-play" style={{ position: 'static', transform: 'none' }}><Play size={23} fill="currentColor" /></span></div><p style={{ margin: '18px 0 0' }}>영상 전체 공개를 준비 중입니다. 멤버십에서는 회차별 당첨 인터뷰와 분석팀의 복기 영상을 먼저 확인할 수 있습니다.</p></Modal>}
     </div>
   );
 }
 
 function Router() {
-  return <RoutedErrorBoundary><Switch><Route path="/" component={Home} /><Route component={NotFound} /></Switch></RoutedErrorBoundary>;
+  return <RoutedErrorBoundary><Switch><Route path="/" component={Home} /><Route path="/admin" component={AdminApp} /><Route component={NotFound} /></Switch></RoutedErrorBoundary>;
 }
 
 function RoutedErrorBoundary({ children }: { children: ReactNode }) {

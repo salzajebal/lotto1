@@ -1,20 +1,131 @@
-// Export your models here. Add one export per file
-// export * from "./posts";
-//
-// Each model/table should ideally be split into different files.
-// Each model/table should define a Drizzle table, insert schema, and types:
-//
-//   import { pgTable, text, serial } from "drizzle-orm/pg-core";
-//   import { createInsertSchema } from "drizzle-zod";
-//   import { z } from "zod/v4";
-//
-//   export const postsTable = pgTable("posts", {
-//     id: serial("id").primaryKey(),
-//     title: text("title").notNull(),
-//   });
-//
-//   export const insertPostSchema = createInsertSchema(postsTable).omit({ id: true });
-//   export type InsertPost = z.infer<typeof insertPostSchema>;
-//   export type Post = typeof postsTable.$inferSelect;
+import {
+  boolean,
+  integer,
+  pgTable,
+  serial,
+  text,
+  timestamp,
+} from "drizzle-orm/pg-core";
 
-export {}
+const timestamps = {
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+};
+
+export const adminUsersTable = pgTable("admin_users", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique(),
+  passwordHash: text("password_hash").notNull(),
+  role: text("role").notNull().default("staff"),
+  active: boolean("active").notNull().default(true),
+  ...timestamps,
+});
+
+export const adminSessionsTable = pgTable("admin_sessions", {
+  id: serial("id").primaryKey(),
+  adminId: integer("admin_id").notNull().references(() => adminUsersTable.id, { onDelete: "cascade" }),
+  tokenHash: text("token_hash").notNull().unique(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  createdAt: timestamps.createdAt,
+});
+
+export const memberGradesTable = pgTable("member_grades", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  price: integer("price").notNull().default(0),
+  color: text("color").notNull().default("#D8A84E"),
+  description: text("description").notNull().default(""),
+  benefits: text("benefits").array().notNull().default([]),
+  active: boolean("active").notNull().default(true),
+  ...timestamps,
+});
+
+export const membersTable = pgTable("members", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull().default(""),
+  phone: text("phone").notNull().default(""),
+  gradeId: integer("grade_id").references(() => memberGradesTable.id, { onDelete: "set null" }),
+  status: text("status").notNull().default("active"),
+  assignedStaffId: integer("assigned_staff_id").references(() => adminUsersTable.id, { onDelete: "set null" }),
+  source: text("source").notNull().default("direct"),
+  monthlyRevenue: integer("monthly_revenue").notNull().default(0),
+  notes: text("notes").notNull().default(""),
+  ...timestamps,
+});
+
+export const analysisDatabasesTable = pgTable("analysis_databases", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  drawNumber: integer("draw_number"),
+  status: text("status").notNull().default("ready"),
+  memberCount: integer("member_count").notNull().default(0),
+  price: integer("price").notNull().default(0),
+  assignedStaffId: integer("assigned_staff_id").references(() => adminUsersTable.id, { onDelete: "set null" }),
+  notes: text("notes").notNull().default(""),
+  ...timestamps,
+});
+
+export const dbAssignmentsTable = pgTable("db_assignments", {
+  id: serial("id").primaryKey(),
+  databaseId: integer("database_id").notNull().references(() => analysisDatabasesTable.id, { onDelete: "cascade" }),
+  staffId: integer("staff_id").notNull().references(() => adminUsersTable.id, { onDelete: "cascade" }),
+  memberId: integer("member_id").references(() => membersTable.id, { onDelete: "set null" }),
+  status: text("status").notNull().default("assigned"),
+  notes: text("notes").notNull().default(""),
+  assignedAt: timestamp("assigned_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const supportInquiriesTable = pgTable("support_inquiries", {
+  id: serial("id").primaryKey(),
+  memberId: integer("member_id").references(() => membersTable.id, { onDelete: "set null" }),
+  name: text("name").notNull(),
+  contact: text("contact").notNull(),
+  category: text("category").notNull().default("일반 문의"),
+  subject: text("subject").notNull().default(""),
+  message: text("message").notNull(),
+  status: text("status").notNull().default("new"),
+  priority: text("priority").notNull().default("normal"),
+  assignedStaffId: integer("assigned_staff_id").references(() => adminUsersTable.id, { onDelete: "set null" }),
+  lastContactedAt: timestamp("last_contacted_at", { withTimezone: true }),
+  ...timestamps,
+});
+
+export const consultationNotesTable = pgTable("consultation_notes", {
+  id: serial("id").primaryKey(),
+  inquiryId: integer("inquiry_id").references(() => supportInquiriesTable.id, { onDelete: "cascade" }),
+  memberId: integer("member_id").references(() => membersTable.id, { onDelete: "set null" }),
+  staffId: integer("staff_id").notNull().references(() => adminUsersTable.id, { onDelete: "cascade" }),
+  content: text("content").notNull(),
+  ...timestamps,
+});
+
+export const winningReviewsTable = pgTable("winning_reviews", {
+  id: serial("id").primaryKey(),
+  memberName: text("member_name").notNull(),
+  drawNumber: integer("draw_number").notNull(),
+  rank: text("rank").notNull(),
+  amount: integer("amount").notNull().default(0),
+  content: text("content").notNull(),
+  status: text("status").notNull().default("pending"),
+  ...timestamps,
+});
+
+export const auditEventsTable = pgTable("audit_events", {
+  id: serial("id").primaryKey(),
+  adminId: integer("admin_id").references(() => adminUsersTable.id, { onDelete: "set null" }),
+  action: text("action").notNull(),
+  entity: text("entity").notNull(),
+  entityId: integer("entity_id"),
+  detail: text("detail").notNull().default(""),
+  createdAt: timestamps.createdAt,
+});
+
+export type AdminUser = typeof adminUsersTable.$inferSelect;
+export type Member = typeof membersTable.$inferSelect;
+export type MemberGrade = typeof memberGradesTable.$inferSelect;
+export type AnalysisDatabase = typeof analysisDatabasesTable.$inferSelect;
+export type SupportInquiry = typeof supportInquiriesTable.$inferSelect;
+export type WinningReview = typeof winningReviewsTable.$inferSelect;

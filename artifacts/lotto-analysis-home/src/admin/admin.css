@@ -1,0 +1,70 @@
+/* admin.css */
+.admin-app {
+  --ad-bg: #0B0E14;
+  --ad-panel: #141821;
+  --ad-panel-hover: #1A1F2B;
+  --ad-border: #232A3B;
+  --ad-text: #E2E8F0;
+  --ad-muted: #8B949E;
+  --ad-gold: #E8BB51;
+  --ad-gold-hover: #F1C968;
+  --ad-gold-bg: rgba(232, 187, 81, 0.1);
+  --ad-warning: #E8BB51;
+  --ad-danger: #F85149;
+  --ad-success: #3FB950;
+  --ad-info: #58A6FF;
+  
+  background-color: var(--ad-bg);
+  color: var(--ad-text);
+  font-family: var(--app-font-sans);
+  min-height: 100dvh;
+}
+
+.admin-app input, .admin-app select, .admin-app textarea {
+  background-color: #07090D;
+  border: 1px solid var(--ad-border);
+  color: var(--ad-text);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.admin-app input:focus, .admin-app select:focus, .admin-app textarea:focus {
+  border-color: var(--ad-gold);
+}
+
+.admin-app .admin-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.admin-app .admin-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.admin-app .admin-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--ad-border);
+  border-radius: 4px;
+}
+.admin-app .admin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--ad-muted);
+}
+
+@keyframes admin-fade-in {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.admin-animate-in {
+  animation: admin-fade-in 0.2s ease forwards;
+}
+
+/* Modal overlay */
+.admin-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 6, 10, 0.85);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  animation: admin-fade-in 0.15s ease forwards;
+}
