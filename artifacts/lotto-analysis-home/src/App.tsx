@@ -9,7 +9,7 @@ import {
   Play,
   X,
 } from 'lucide-react';
-import lottoBallsBackground from '@assets/generated_images/lotto-balls-hero.jpg';
+import lottoBallsBackground from '@assets/ChatGPT_Image_2026년_8월_29일_오전_03_28_36_1787999327234.png';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
