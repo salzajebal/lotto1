@@ -11,6 +11,7 @@ import {
   Play,
   X,
 } from 'lucide-react';
+import referenceImage from '@assets/image_1787998331414.png';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -97,7 +98,7 @@ function Home() {
 
   return (
     <div className="lotto-app" ref={revealRoot}>
-      <header className="topbar">
+      <header className="topbar reference-topbar">
         <div className="shell topbar-inner">
           <a className="brand" href="#top" aria-label="골든픽 홈">
             <span className="brand-mark" />
@@ -118,23 +119,16 @@ function Home() {
       </header>
 
       <main id="top">
-        <section className="hero">
-          <div className="shell hero-inner">
-            <div className="hero-copy">
-              <div className="hero-kicker"><span className="live-dot" /> 이번 주 분석 리포트 업데이트</div>
-              <h1 className="display">운이 아니라,<br /><em>흐름을 읽습니다.</em></h1>
-              <p className="hero-sub">누적된 당첨 데이터와 회차별 패턴을 바탕으로, 이번 주 당신이 확인할 숫자를 만듭니다.</p>
-              <div className="hero-actions">
-                <a className="gold-button" href="#membership">분석 멤버십 보기 <ArrowRight size={16} /></a>
-                <a className="outline-button" href="#proof">실제 당첨 사례 <ChevronRight size={16} /></a>
-              </div>
-              <div className="hero-note"><LockKeyhole size={13} /> 과장 없이 공개하는 회차별 분석 기록</div>
-            </div>
-            <div className="hero-visual" aria-label="골든 픽 분석을 상징하는 황금 공 그래픽">
-              <div className="orbit"><span className="orbit-label">DATA / PATTERN / TRUST</span></div>
-              <div className="ball"><span className="ball-number">7</span></div>
-              <span className="ball-caption">THE NUMBER IS NEVER RANDOM</span>
-              <div className="hero-metric"><strong>1,184회</strong><span>이번 주 분석 회차</span></div>
+        <section className="reference-hero" aria-label="로또 분석 번호 메인 화면">
+          <div className="reference-canvas" style={{ backgroundImage: `url(${referenceImage})` }}>
+            <div className="reference-hitboxes" aria-label="메인 메뉴 바로가기">
+              <button className="reference-hitbox reference-login-hitbox" aria-label="로그인 또는 회원가입" onClick={() => openModal('auth')} />
+              <a className="reference-hitbox reference-review-hitbox" href="#proof" aria-label="당첨 후기 보기" />
+              <button className="reference-hitbox reference-video-hitbox" aria-label="당첨 영상 보기" onClick={() => openModal('video')} />
+              <button className="reference-hitbox reference-membership-hitbox" aria-label="멤버십 서비스 보기" onClick={() => openModal('membership')} />
+              <button className="reference-hitbox reference-support-hitbox" aria-label="고객센터 문의하기" onClick={() => openModal('support')} />
+              <a className="reference-hitbox reference-community-hitbox" href="#community" aria-label="커뮤니티 보기" />
+              <button className="reference-hitbox reference-join-hitbox" aria-label="멤버십 가입 상담하기" onClick={() => openModal('membership')} />
             </div>
           </div>
         </section>
