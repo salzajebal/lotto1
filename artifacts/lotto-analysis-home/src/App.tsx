@@ -3,15 +3,13 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   ArrowRight,
   Check,
-  ChevronRight,
   Headphones,
-  LockKeyhole,
   Menu,
   MessageCircle,
   Play,
   X,
 } from 'lucide-react';
-import referenceImage from '@assets/image_1787998331414.png';
+import lottoBallsBackground from '@assets/generated_images/lotto-balls-hero.jpg';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -98,11 +96,11 @@ function Home() {
 
   return (
     <div className="lotto-app" ref={revealRoot}>
-      <header className="topbar reference-topbar">
+      <header className="topbar lotto-topbar">
         <div className="shell topbar-inner">
-          <a className="brand" href="#top" aria-label="골든픽 홈">
-            <span className="brand-mark" />
-            <span className="brand-text">GOLDEN PICK<small>LOTTO ANALYSIS LAB</small></span>
+          <a className="brand lotto-brand" href="#top" aria-label="로또 분석 번호 홈">
+            <span className="clover-mark" aria-hidden="true"><i /><i /><i /><i /></span>
+            <span className="brand-text">로또 분석 번호<small>실제 당첨의 기쁨을 함께합니다</small></span>
           </a>
           <nav className={menuOpen ? 'nav mobile-open' : 'nav'} aria-label="주요 메뉴">
             <a href="#proof" onClick={() => setMenuOpen(false)}>당첨 후기</a>
@@ -119,16 +117,56 @@ function Home() {
       </header>
 
       <main id="top">
-        <section className="reference-hero" aria-label="로또 분석 번호 메인 화면">
-          <div className="reference-canvas" style={{ backgroundImage: `url(${referenceImage})` }}>
-            <div className="reference-hitboxes" aria-label="메인 메뉴 바로가기">
-              <button className="reference-hitbox reference-login-hitbox" aria-label="로그인 또는 회원가입" onClick={() => openModal('auth')} />
-              <a className="reference-hitbox reference-review-hitbox" href="#proof" aria-label="당첨 후기 보기" />
-              <button className="reference-hitbox reference-video-hitbox" aria-label="당첨 영상 보기" onClick={() => openModal('video')} />
-              <button className="reference-hitbox reference-membership-hitbox" aria-label="멤버십 서비스 보기" onClick={() => openModal('membership')} />
-              <button className="reference-hitbox reference-support-hitbox" aria-label="고객센터 문의하기" onClick={() => openModal('support')} />
-              <a className="reference-hitbox reference-community-hitbox" href="#community" aria-label="커뮤니티 보기" />
-              <button className="reference-hitbox reference-join-hitbox" aria-label="멤버십 가입 상담하기" onClick={() => openModal('membership')} />
+        <section className="lotto-photo-hero" aria-label="로또 분석 번호 메인 화면" style={{ backgroundImage: `url(${lottoBallsBackground})` }}>
+          <div className="lotto-photo-shade" />
+          <div className="shell lotto-photo-content">
+            <div className="lotto-photo-heading">
+              <h1>로또 <em>1등</em> 실제 당첨 후기</h1>
+              <p>실제 당첨자들의 생생한 후기와 인터뷰를 확인하세요!</p>
+            </div>
+
+            <div className="winner-showcase">
+              <button className="winner-card winner-card-person" onClick={() => openModal('video')}>
+                <span className="person-portrait portrait-one" aria-hidden="true"><i /><b /></span>
+                <span className="winner-board"><small>로또 1등 당첨</small><strong>5,000,000,000원</strong></span>
+                <span className="winner-quote">“평생 꿈만 같아요…<br />이제 가족들과 더 행복하게 살 수 있어요”</span>
+                <span className="winner-link"><Play size={14} fill="currentColor" /> 로또 1등 당첨자 인터뷰</span>
+              </button>
+
+              <button className="winner-card winner-card-receipt" onClick={() => openModal('video')}>
+                <span className="receipt-paper">
+                  <small>LOTTO 6/45</small>
+                  <b>1등 당첨</b>
+                  <strong>5,000,000,000원</strong>
+                  <i>03 08 14 23 33 45</i>
+                </span>
+                <span className="winner-quote">“정말 믿기지 않았는데,<br />확인하는 순간 눈물이 났습니다”</span>
+                <span className="winner-link"><Play size={14} fill="currentColor" /> 로또 1등 실제 당첨 영상</span>
+              </button>
+
+              <button className="winner-card winner-card-person" onClick={() => openModal('review')}>
+                <span className="person-portrait portrait-two" aria-hidden="true"><i /><b /></span>
+                <span className="winner-board"><small>로또 1등 당첨</small><strong>10,000,000,000원</strong></span>
+                <span className="winner-quote">“저에게는 인생이 바뀐 순간이었습니다.<br />정말 감사합니다!”</span>
+                <span className="winner-link"><Play size={14} fill="currentColor" /> 로또 1등 당첨자 후기</span>
+              </button>
+            </div>
+
+            <div className="hero-quick-grid">
+              <button className="hero-quick-card quick-gold" onClick={() => openModal('membership')}>
+                <span className="quick-icon">VIP</span><strong>멤버십 서비스 안내</strong><small>전문가의 분석 번호를<br />멤버십으로 받아보세요</small><b>자세히 보기</b>
+              </button>
+              <button className="hero-quick-card quick-blue" onClick={() => openModal('support')}>
+                <Headphones className="quick-svg" /><strong>고객센터</strong><small>궁금한 점이 있으신가요?<br />언제든지 문의주세요.</small><b>문의하기</b>
+              </button>
+              <a className="hero-quick-card quick-purple" href="#community">
+                <MessageCircle className="quick-svg" /><strong>커뮤니티</strong><small>당첨 후기 공유, 정보 교류<br />함께하는 로또 커뮤니티</small><b>바로가기</b>
+              </a>
+              <button className="hero-quick-card quick-membership" onClick={() => openModal('membership')}>
+                <strong>멤버십 분석 번호 서비스</strong>
+                <ul><li>전문가의 체계적인 번호 분석</li><li>매주 업데이트되는 최신 번호</li><li>높은 적중률을 목표로 한 차별화된 서비스</li></ul>
+                <b>멤버십 가입하기</b>
+              </button>
             </div>
           </div>
         </section>

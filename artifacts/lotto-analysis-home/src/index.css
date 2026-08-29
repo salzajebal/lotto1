@@ -433,3 +433,314 @@ a { color: inherit; text-decoration: none; }
     height: 23%;
   }
 }
+
+/* Custom-built reference layout using a separate lottery-ball background */
+.lotto-topbar {
+  position: relative;
+  z-index: 30;
+  background: linear-gradient(180deg, #070c1a 0%, #050915 100%);
+  border-bottom: 1px solid rgb(85 121 207 / 0.28);
+}
+
+.lotto-brand {
+  min-width: 230px;
+}
+
+.clover-mark {
+  position: relative;
+  display: block;
+  width: 45px;
+  height: 45px;
+  transform: rotate(45deg);
+}
+
+.clover-mark i {
+  position: absolute;
+  width: 21px;
+  height: 21px;
+  border-radius: 55% 55% 46% 55%;
+  background: linear-gradient(145deg, #8fe24c, #2b9d2d 70%);
+  box-shadow: inset 2px 2px 4px rgb(255 255 255 / 0.25), 0 0 12px rgb(74 197 57 / 0.22);
+}
+
+.clover-mark i:nth-child(1) { top: 0; left: 0; }
+.clover-mark i:nth-child(2) { top: 0; right: 0; transform: rotate(90deg); }
+.clover-mark i:nth-child(3) { bottom: 0; left: 0; transform: rotate(-90deg); }
+.clover-mark i:nth-child(4) { right: 0; bottom: 0; transform: rotate(180deg); }
+
+.lotto-brand .brand-text {
+  color: #fff0a0;
+  font-size: 19px;
+  letter-spacing: -0.055em;
+}
+
+.lotto-brand .brand-text small {
+  color: #d4dae8;
+  letter-spacing: -0.025em;
+}
+
+.lotto-photo-hero {
+  position: relative;
+  isolation: isolate;
+  min-height: 690px;
+  padding: 30px 0 28px;
+  overflow: hidden;
+  background-position: center 48%;
+  background-size: cover;
+}
+
+.lotto-photo-shade {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgb(2 8 24 / 0.18) 0%, rgb(2 7 22 / 0.54) 48%, rgb(2 7 20 / 0.9) 100%),
+    radial-gradient(circle at 50% 15%, transparent 0 23%, rgb(0 4 18 / 0.35) 80%);
+}
+
+.lotto-photo-content {
+  position: relative;
+  z-index: 1;
+}
+
+.lotto-photo-heading {
+  text-align: center;
+  text-shadow: 0 3px 12px #02040b, 0 1px 2px #000;
+}
+
+.lotto-photo-heading h1 {
+  margin: 0;
+  color: #fff;
+  font: 900 clamp(37px, 4.9vw, 64px)/1.05 Manrope, sans-serif;
+  letter-spacing: -0.07em;
+}
+
+.lotto-photo-heading h1 em {
+  color: #ffe34f;
+  font-style: normal;
+}
+
+.lotto-photo-heading p {
+  margin: 10px 0 0;
+  color: #fff;
+  font-size: clamp(15px, 1.55vw, 21px);
+  font-weight: 700;
+}
+
+.winner-showcase {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 38px;
+}
+
+.winner-card {
+  position: relative;
+  min-height: 290px;
+  overflow: hidden;
+  padding: 18px 18px 52px;
+  border: 1px solid rgb(255 255 255 / 0.76);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgb(12 18 31 / 0.2), rgb(3 8 20 / 0.96));
+  box-shadow: 0 16px 38px rgb(0 0 0 / 0.4);
+  color: #fff;
+  cursor: pointer;
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.winner-card:hover {
+  z-index: 2;
+  transform: translateY(-5px);
+  border-color: #ffd84f;
+  box-shadow: 0 20px 48px rgb(0 0 0 / 0.55), 0 0 0 1px rgb(255 216 79 / 0.22);
+}
+
+.person-portrait {
+  position: absolute;
+  inset: 0 0 77px;
+  background: linear-gradient(135deg, rgb(13 30 53 / 0.45), rgb(62 86 118 / 0.2));
+}
+
+.person-portrait i {
+  position: absolute;
+  top: 15px;
+  left: 50%;
+  width: 84px;
+  height: 84px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: #c0a087;
+  box-shadow: 0 0 0 14px #1e2735;
+}
+
+.person-portrait b {
+  position: absolute;
+  top: 80px;
+  left: 50%;
+  width: 180px;
+  height: 126px;
+  transform: translateX(-50%);
+  border-radius: 80px 80px 16px 16px;
+  background: linear-gradient(145deg, #202b3b, #080d16);
+}
+
+.portrait-two i { background: #d0aa8a; }
+.portrait-two b { background: linear-gradient(145deg, #e7e9ed, #8d97a7); }
+
+.winner-board {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: min(92%, 330px);
+  min-height: 105px;
+  margin: 68px auto 0;
+  padding: 13px 8px;
+  border: 4px solid #d5c49e;
+  background: #fff;
+  box-shadow: 0 5px 16px rgb(0 0 0 / 0.4);
+  color: #090b10;
+  transform: rotate(-1deg);
+}
+
+.winner-board small {
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.winner-board strong {
+  font-size: clamp(21px, 2.2vw, 31px);
+  line-height: 1;
+  letter-spacing: -0.06em;
+}
+
+.receipt-paper {
+  position: relative;
+  display: flex;
+  width: min(80%, 260px);
+  min-height: 176px;
+  margin: -4px auto 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #c6c6c6;
+  background:
+    repeating-linear-gradient(0deg, rgb(0 0 0 / 0.04) 0 1px, transparent 1px 5px),
+    #f4f1e9;
+  box-shadow: 0 10px 25px rgb(0 0 0 / 0.45);
+  color: #111;
+  transform: rotate(2deg);
+}
+
+.receipt-paper small { font: 800 20px Manrope, sans-serif; }
+.receipt-paper b { margin: 12px 0; padding: 4px 15px; background: #ffe52b; font-size: 20px; }
+.receipt-paper strong { font-size: clamp(20px, 2vw, 28px); letter-spacing: -0.06em; }
+.receipt-paper i { margin-top: 13px; color: #626262; font: 12px monospace; }
+
+.winner-quote {
+  position: relative;
+  z-index: 3;
+  display: block;
+  margin-top: 12px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.45;
+  text-align: left;
+  text-shadow: 0 2px 4px #000;
+}
+
+.winner-link {
+  position: absolute;
+  right: 16px;
+  bottom: 13px;
+  left: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #f7f8fc;
+  font-size: 12px;
+}
+
+.winner-link svg {
+  box-sizing: content-box;
+  padding: 6px;
+  border-radius: 50%;
+  background: #9a6c13;
+}
+
+.hero-quick-grid {
+  display: grid;
+  grid-template-columns: 1fr 0.92fr 0.98fr 1.45fr;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.hero-quick-card {
+  min-height: 145px;
+  padding: 16px 18px;
+  border: 1px solid rgb(255 255 255 / 0.3);
+  border-radius: 10px;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08), 0 12px 28px rgb(0 0 0 / 0.32);
+  color: #fff;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 160ms ease, filter 160ms ease;
+}
+
+.hero-quick-card:hover {
+  transform: translateY(-3px);
+  filter: brightness(1.12);
+}
+
+.quick-gold { background: linear-gradient(145deg, rgb(67 42 16 / 0.96), rgb(20 18 28 / 0.96)); }
+.quick-blue { background: linear-gradient(145deg, rgb(7 48 111 / 0.97), rgb(5 18 49 / 0.97)); }
+.quick-purple { background: linear-gradient(145deg, rgb(51 24 132 / 0.97), rgb(17 14 58 / 0.97)); }
+.quick-membership { background: linear-gradient(145deg, rgb(6 27 70 / 0.98), rgb(4 13 35 / 0.98)); text-align: left; }
+
+.quick-icon,
+.quick-svg {
+  display: block;
+  width: 32px;
+  height: 32px;
+  margin: 0 auto 4px;
+  color: #ffe05c;
+}
+
+.quick-icon {
+  font: 900 18px/32px Manrope, sans-serif;
+}
+
+.quick-blue .quick-svg { color: #3386ff; }
+.quick-purple .quick-svg { color: #d466ff; }
+.hero-quick-card > strong { display: block; font-size: 16px; }
+.hero-quick-card > small { display: block; margin-top: 5px; color: #d7ddeb; font-size: 11px; line-height: 1.35; }
+.hero-quick-card > b { display: block; margin-top: 9px; padding: 6px 8px; border-radius: 5px; background: linear-gradient(180deg, #ffdb52, #ffad13); color: #14100a; font-size: 11px; }
+.quick-blue > b { background: linear-gradient(180deg, #2792ff, #075de0); color: #fff; }
+.quick-purple > b { background: linear-gradient(180deg, #894bff, #5320d3); color: #fff; }
+.quick-membership > strong { color: #9ec1ff; font-size: 17px; }
+.quick-membership ul { display: grid; gap: 5px; margin: 10px 0 0; padding: 0; list-style: none; color: #dce5f8; font-size: 11px; }
+.quick-membership li::before { content: "✓"; margin-right: 8px; color: #fff078; }
+.quick-membership > b { text-align: center; }
+
+@media (max-width: 860px) {
+  .lotto-photo-hero { padding-top: 34px; }
+  .winner-showcase { grid-template-columns: 1fr; }
+  .winner-card { min-height: 305px; }
+  .hero-quick-grid { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 600px) {
+  .lotto-photo-hero {
+    min-height: 0;
+    padding: 26px 0 28px;
+    background-position: center top;
+  }
+  .lotto-photo-heading h1 { font-size: 36px; }
+  .lotto-photo-heading p { font-size: 13px; }
+  .winner-showcase { margin-top: 24px; }
+  .winner-card { min-height: 285px; }
+  .hero-quick-grid { grid-template-columns: 1fr; }
+  .hero-quick-card { min-height: 132px; }
+}
