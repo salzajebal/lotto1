@@ -9,6 +9,7 @@ import {
   adminSessionsTable,
   adminUsersTable,
   analysisDatabasesTable,
+  analysisDatabaseNotesTable,
   analysisDatabaseRowsTable,
   auditEventsTable,
   communityPostsTable,
@@ -1120,6 +1121,39 @@ router.get("/admin/databases/:id/rows", async (req, res): Promise<void> => {
       totalPages: Math.max(1, Math.ceil(total / limit)),
     },
   });
+});
+
+router.get("/admin/databases/:id/notes", async (req, res): Promise<void> => {
+  const id = int(req.params.id);
+  if (!(await canAccessDatabase(req, id))) {
+    res.status(403).json({ error: "이 분석 DB의 메모를 조회할 권한이 없습니다." });
+    return;
+  }
+  const notes = await db.select({ note: analysisDatabaseNotesTable, staffName: adminUsersTable.name })
+    .from(analysisDatabaseNotesTable)
+    .leftJoin(adminUsersTable, eq(analysisDatabaseNotesTable.staffId, adminUsersTable.id))
+    .where(eq(analysisDatabaseNotesTable.databaseId, id))
+    .orderBy(desc(analysisDatabaseNotesTable.createdAt));
+  res.json(notes.map(({ note, staffName }) => ({ ...note, staffName })));
+});
+
+router.post("/admin/databases/:id/notes", async (req, res): Promise<void> => {
+  const id = int(req.params.id);
+  const body = parse(z.object({
+    content: z.string().trim().min(1, "메모 내용을 입력해주세요.").max(3000, "메모는 3,000자 이내로 작성해주세요."),
+  }), req.body, res);
+  if (!body) return;
+  if (!(await canAccessDatabase(req, id))) {
+    res.status(403).json({ error: "이 분석 DB에 메모를 작성할 권한이 없습니다." });
+    return;
+  }
+  const [note] = await db.insert(analysisDatabaseNotesTable).values({
+    databaseId: id,
+    staffId: req.adminUser!.id,
+    content: body.content,
+  }).returning();
+  await recordEvent(req, "create", "analysis_database_note", note.id);
+  res.status(201).json({ ...note, staffName: req.adminUser!.name });
 });
 
 router.post("/admin/databases/:id/assign", requireOwner, async (req, res): Promise<void> => {

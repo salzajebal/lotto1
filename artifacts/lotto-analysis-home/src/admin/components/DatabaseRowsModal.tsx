@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { ChevronLeft, ChevronRight, Loader2, Search } from 'lucide-react';
-import { useDatabaseRows } from '../api';
-import { Button, Input, Modal, Table, Td, Th } from './UI';
+import { ChevronLeft, ChevronRight, Loader2, MessageSquareText, Search, Send } from 'lucide-react';
+import { useCreateDatabaseNote, useDatabaseNotes, useDatabaseRows } from '../api';
+import { Button, Input, Modal, Table, Td, Th, Textarea } from './UI';
 
 export default function DatabaseRowsModal({
   database,
@@ -14,17 +14,29 @@ export default function DatabaseRowsModal({
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const { data, isLoading, error } = useDatabaseRows(database?.id ?? null, { search, page, limit: 50 });
+  const { data: notes, isLoading: notesLoading } = useDatabaseNotes(database?.id ?? null);
+  const createNote = useCreateDatabaseNote();
+  const [noteContent, setNoteContent] = useState('');
 
   useEffect(() => {
     setSearchInput('');
     setSearch('');
     setPage(1);
+    setNoteContent('');
   }, [database?.id]);
 
   const handleSearch = (event: React.FormEvent) => {
     event.preventDefault();
     setPage(1);
     setSearch(searchInput.trim());
+  };
+
+  const handleAddNote = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!database || !noteContent.trim()) return;
+    createNote.mutate({ databaseId: database.id, content: noteContent.trim() }, {
+      onSuccess: () => setNoteContent(''),
+    });
   };
 
   return (
@@ -46,6 +58,52 @@ export default function DatabaseRowsModal({
             </Button>
           </form>
         </div>
+
+        <section className="rounded-lg border border-[var(--ad-border)] bg-[var(--ad-bg)] p-4">
+          <div className="mb-3 flex items-center gap-2">
+            <MessageSquareText size={16} className="text-[var(--ad-gold)]" />
+            <div>
+              <h3 className="text-sm font-semibold text-white">통화 상담 메모</h3>
+              <p className="text-xs text-[var(--ad-muted)]">고객에게 노출되지 않는 내부 기록입니다.</p>
+            </div>
+          </div>
+          <div className="mb-3 space-y-2">
+            {notesLoading ? (
+              <div className="flex justify-center py-3"><Loader2 size={16} className="animate-spin text-[var(--ad-muted)]" /></div>
+            ) : notes?.length ? (
+              notes.map((note: any) => (
+                <div key={note.id} className="rounded-md border border-[var(--ad-border)] bg-[var(--ad-panel)] p-3">
+                  <div className="mb-1 flex items-center justify-between gap-3">
+                    <span className="text-xs font-semibold text-[var(--ad-gold)]">{note.staffName || '관리자'}</span>
+                    <span className="text-[10px] text-[var(--ad-muted)]">{new Date(note.createdAt).toLocaleString()}</span>
+                  </div>
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-[#E2E8F0]">{note.content}</p>
+                </div>
+              ))
+            ) : (
+              <p className="py-2 text-center text-xs text-[var(--ad-muted)]">아직 작성된 상담 메모가 없습니다.</p>
+            )}
+          </div>
+          <form onSubmit={handleAddNote} className="relative">
+            <Textarea
+              value={noteContent}
+              onChange={(event) => setNoteContent(event.target.value)}
+              placeholder="통화 후 고객 성향과 상담 내용을 기록해주세요."
+              maxLength={3000}
+              className="min-h-[74px] pr-12"
+            />
+            <Button
+              type="submit"
+              size="sm"
+              className="absolute bottom-2 right-2 h-8 w-8 rounded-md p-0"
+              disabled={createNote.isPending || !noteContent.trim()}
+              aria-label="상담 메모 저장"
+            >
+              {createNote.isPending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+            </Button>
+          </form>
+          {createNote.isError && <p className="mt-2 text-xs text-[#F85149]">{createNote.error instanceof Error ? createNote.error.message : '메모 저장에 실패했습니다.'}</p>}
+        </section>
 
         {isLoading ? (
           <div className="flex justify-center p-12"><Loader2 className="animate-spin text-[var(--ad-gold)]" /></div>

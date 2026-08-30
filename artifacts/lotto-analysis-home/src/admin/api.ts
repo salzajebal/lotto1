@@ -264,6 +264,28 @@ export function useDatabaseRows(databaseId: number | null, params?: { search?: s
   });
 }
 
+export function useDatabaseNotes(databaseId: number | null) {
+  return useQuery({
+    queryKey: ['adminDatabaseNotes', databaseId],
+    queryFn: () => fetcher(`${API_BASE}/databases/${databaseId}/notes`),
+    enabled: databaseId != null,
+  });
+}
+
+export function useCreateDatabaseNote() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: ({ databaseId, content }: { databaseId: number; content: string }) =>
+      fetcher(`${API_BASE}/databases/${databaseId}/notes`, { method: 'POST', body: JSON.stringify({ content }) }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['adminDatabaseNotes', variables.databaseId] });
+      toast({ title: '상담 메모 저장 완료', description: '분석 DB에 내부 메모가 추가되었습니다.' });
+    },
+    onError: (err: Error) => toast({ title: '상담 메모 저장 실패', description: err.message, variant: 'destructive' }),
+  });
+}
+
 export function useAssignDatabase() {
   const queryClient = useQueryClient();
   return useMutation({

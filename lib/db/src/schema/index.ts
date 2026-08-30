@@ -92,6 +92,17 @@ export const analysisDatabaseRowsTable = pgTable("analysis_database_rows", {
     .on(table.databaseId, table.phone),
 }));
 
+export const analysisDatabaseNotesTable = pgTable("analysis_database_notes", {
+  id: serial("id").primaryKey(),
+  databaseId: integer("database_id").notNull().references(() => analysisDatabasesTable.id, { onDelete: "cascade" }),
+  staffId: integer("staff_id").notNull().references(() => adminUsersTable.id, { onDelete: "cascade" }),
+  content: text("content").notNull(),
+  ...timestamps,
+}, (table) => ({
+  databaseCreated: index("analysis_database_notes_database_created_idx")
+    .on(table.databaseId, table.createdAt),
+}));
+
 export const dbAssignmentsTable = pgTable("db_assignments", {
   id: serial("id").primaryKey(),
   databaseId: integer("database_id").notNull().references(() => analysisDatabasesTable.id, { onDelete: "cascade" }),
@@ -170,6 +181,7 @@ export type Member = typeof membersTable.$inferSelect;
 export type MemberGrade = typeof memberGradesTable.$inferSelect;
 export type AnalysisDatabase = typeof analysisDatabasesTable.$inferSelect;
 export type AnalysisDatabaseRow = typeof analysisDatabaseRowsTable.$inferSelect;
+export type AnalysisDatabaseNote = typeof analysisDatabaseNotesTable.$inferSelect;
 export type SupportInquiry = typeof supportInquiriesTable.$inferSelect;
 export type WinningReview = typeof winningReviewsTable.$inferSelect;
 export type CommunityPost = typeof communityPostsTable.$inferSelect;

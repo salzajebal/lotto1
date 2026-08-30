@@ -180,6 +180,7 @@ export default function InquiriesView({ user }: { user: { role: string } }) {
                 <span><strong className="text-white">연락처:</strong> {activeInquiry.contact}</span>
                 <span><strong className="text-white">유형:</strong> {activeInquiry.category}</span>
                 <span><strong className="text-white">우선순위:</strong> {activeInquiry.priority === 'urgent' ? '긴급' : activeInquiry.priority === 'high' ? '높음' : activeInquiry.priority === 'low' ? '낮음' : '보통'}</span>
+                <span><strong className="text-white">접수 시각:</strong> {new Date(activeInquiry.createdAt).toLocaleString()}</span>
               </div>
               
               <div className="p-3 bg-[var(--ad-bg)] rounded-md border border-[var(--ad-border)] text-sm text-[#E2E8F0] whitespace-pre-wrap leading-relaxed">

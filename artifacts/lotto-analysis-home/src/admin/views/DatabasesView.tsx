@@ -3,7 +3,7 @@ import { useDatabases, useStaff, useCreateDatabase, useBulkAssignDatabases, useA
 import { Card, Table, Th, Td, Badge, Button, Input, Select, Modal, Label, Textarea } from '../components/UI';
 import DatabaseImportModal from '../components/DatabaseImportModal';
 import DatabaseRowsModal from '../components/DatabaseRowsModal';
-import { Eye, Plus, Upload, UserPlus, Loader2, CheckSquare } from 'lucide-react';
+import { Eye, MessageSquareText, Plus, Upload, UserPlus, Loader2, CheckSquare } from 'lucide-react';
 
 export default function DatabasesView({ user }: { user: { role: string } }) {
   const canAssign = user.role === 'owner';
@@ -112,13 +112,22 @@ export default function DatabasesView({ user }: { user: { role: string } }) {
                 <Td>{db.drawNumber ? `${db.drawNumber}회` : '-'}</Td>
                 <Td>₩{db.price.toLocaleString()}</Td>
                 <Td>
-                  <button
-                    type="button"
-                    className="inline-flex items-center gap-1.5 text-[var(--ad-info)] hover:text-white transition-colors"
-                    onClick={() => setDetailDatabase(db)}
-                  >
-                    <Eye size={14} /> {Number(db.entryCount || 0).toLocaleString()}건
-                  </button>
+                   <div className="flex items-center gap-3">
+                     <button
+                       type="button"
+                       className="inline-flex items-center gap-1.5 text-[var(--ad-info)] hover:text-white transition-colors"
+                       onClick={() => setDetailDatabase(db)}
+                     >
+                       <Eye size={14} /> {Number(db.entryCount || 0).toLocaleString()}건
+                     </button>
+                     <button
+                       type="button"
+                       className="inline-flex items-center gap-1.5 text-[var(--ad-gold)] hover:text-white transition-colors"
+                       onClick={() => setDetailDatabase(db)}
+                     >
+                       <MessageSquareText size={14} /> 메모
+                     </button>
+                   </div>
                 </Td>
                 <Td>{db.staffName ? <span className="text-[var(--ad-info)]">{db.staffName}</span> : <span className="text-[var(--ad-muted)]">미배정</span>}</Td>
                 <Td><Badge variant={db.status === 'ready' ? 'warning' : 'success'}>{db.status === 'ready' ? '대기' : db.status}</Badge></Td>
