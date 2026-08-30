@@ -20,10 +20,10 @@ import { PortalHome } from '@/components/PortalHome';
 
 const queryClient = new QueryClient();
 const customerTrustBadges = [
-  { src: `${import.meta.env.BASE_URL}customer-satisfaction-index-no-bg.png`, alt: '한국소비자만족지수 관련 제공 이미지' },
-  { src: `${import.meta.env.BASE_URL}customer-satisfaction-no-bg.png`, alt: '한국고객만족도 관련 제공 이미지' },
-  { src: `${import.meta.env.BASE_URL}consumer-surprise-index-no-bg.png`, alt: '한국소비자감동지수 관련 제공 이미지' },
-  { src: `${import.meta.env.BASE_URL}trust-brand-awards-no-bg.png`, alt: '고객이 신뢰하는 브랜드 대상 관련 제공 이미지' },
+  { src: `${import.meta.env.BASE_URL}customer-satisfaction-index-no-bg.png`, alt: '한국소비자만족지수 1위', label: '한국소비자만족지수 1위' },
+  { src: `${import.meta.env.BASE_URL}customer-satisfaction-no-bg.png`, alt: '한국고객만족도 1위', label: '한국고객만족도 1위' },
+  { src: `${import.meta.env.BASE_URL}consumer-surprise-index-no-bg.png`, alt: '한국소비자감동지수 1위', label: '한국소비자감동지수 1위' },
+  { src: `${import.meta.env.BASE_URL}trust-brand-awards-no-bg.png`, alt: '고객이신뢰하는브랜드대상', label: '고객이신뢰하는브랜드대상' },
 ];
 
 type ModalName = 'review' | 'support' | 'auth' | 'membership' | 'video' | null;
@@ -348,7 +348,7 @@ function PublicPageFooter() {
     <footer className="footer">
       <div className="shell">
         <div className="footer-top">
-          <Link className="brand" href="/"><span className="brand-mark" /><span className="brand-text">LOTTORICO<small>LOTTO ANALYSIS LAB</small></span></Link>
+          <Link className="brand lotto-brand" href="/" aria-label="로또리코 홈"><span className="clover-mark" aria-hidden="true"><i /><i /><i /><i /></span><span className="brand-text">로또리코<small>실제 당첨의 기쁨을 함께합니다</small></span></Link>
           <div className="footer-nav">
             <div><strong>EXPLORE</strong><Link href="/reviews">당첨 후기</Link><Link href="/community">커뮤니티</Link><Link href="/#membership">멤버십</Link></div>
             <div><strong>HELP</strong><Link href="/#support">고객센터</Link><Link href="/#top">홈페이지</Link></div>
