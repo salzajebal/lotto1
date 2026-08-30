@@ -19,7 +19,12 @@ import AdminApp from '@/admin/AdminApp';
 import { PortalHome } from '@/components/PortalHome';
 
 const queryClient = new QueryClient();
-const customerSatisfactionBadge = `${import.meta.env.BASE_URL}customer-satisfaction-no-bg.png`;
+const customerTrustBadges = [
+  { src: `${import.meta.env.BASE_URL}customer-satisfaction-index-no-bg.png`, alt: '한국소비자만족지수 관련 제공 이미지' },
+  { src: `${import.meta.env.BASE_URL}customer-satisfaction-no-bg.png`, alt: '한국고객만족도 관련 제공 이미지' },
+  { src: `${import.meta.env.BASE_URL}consumer-surprise-index-no-bg.png`, alt: '한국소비자감동지수 관련 제공 이미지' },
+  { src: `${import.meta.env.BASE_URL}trust-brand-awards-no-bg.png`, alt: '고객이 신뢰하는 브랜드 대상 관련 제공 이미지' },
+];
 
 type ModalName = 'review' | 'support' | 'auth' | 'membership' | 'video' | null;
 
@@ -300,7 +305,7 @@ function Home() {
           postsError={postsError}
           onModal={openModal}
           renderKakao={(className) => <KakaoChannelAction className={className}><KakaoButtonLabel /></KakaoChannelAction>}
-          badgeSrc={customerSatisfactionBadge}
+          trustBadges={customerTrustBadges}
         />
       </main>
 
