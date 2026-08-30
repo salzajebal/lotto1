@@ -56,8 +56,8 @@ export function PortalArchive() {
       <div className="portal-a-state"><span className="state-dot" /> 매주 토요일 업데이트 · 마지막 기록 1184회</div>
       <header className="portal-a-header">
         <div className="portal-a-shell header-inner">
-          <button className="portal-a-brand" onClick={() => act("골든픽 기록 홈입니다.")} aria-label="골든픽 홈">
-            <span className="brand-seal">G</span><span><b>GOLDEN PICK</b><small>LOTTO RECORDS / SINCE 2018</small></span>
+          <button className="portal-a-brand" onClick={() => act("로또리코 기록 홈입니다.")} aria-label="로또리코 홈">
+            <span className="brand-seal">R</span><span><b>LOTTORICO</b><small>LOTTO RECORDS / SINCE 2018</small></span>
           </button>
           <nav className={menu ? "portal-a-nav open" : "portal-a-nav"}>
             <button className="selected" onClick={() => act("당첨 증빙 메뉴")}>당첨 증빙</button>
@@ -76,12 +76,12 @@ export function PortalArchive() {
 
       <main>
         <div className="portal-a-shell">
-          <div className="breadcrumb"><span>홈</span><ChevronRight size={12} /><strong>골든픽 당첨 기록</strong></div>
+          <div className="breadcrumb"><span>홈</span><ChevronRight size={12} /><strong>로또리코 당첨 기록</strong></div>
           <section className="archive-intro">
             <div>
-              <p className="section-kicker"><ShieldCheck size={15} /> GOLDEN PICK / VERIFIED ARCHIVE</p>
+              <p className="section-kicker"><ShieldCheck size={15} /> LOTTORICO / VERIFIED ARCHIVE</p>
               <h1>당첨의 순간을<br /><em>기록으로 확인하세요.</em></h1>
-              <p className="intro-copy">골든픽 회원이 직접 공유한 당첨 영수증과 인터뷰입니다.<br />확인된 회차, 등수, 금액만 차곡차곡 남깁니다.</p>
+              <p className="intro-copy">로또리코 회원이 직접 공유한 당첨 영수증과 인터뷰입니다.<br />확인된 회차, 등수, 금액만 차곡차곡 남깁니다.</p>
             </div>
             <div className="archive-count"><span>PUBLIC RECORD</span><strong>2,841</strong><small>누적 공개 당첨 기록</small><button onClick={() => act("기록 공개 기준을 확인했습니다.")}>공개 기준 보기 <ChevronRight size={14} /></button></div>
           </section>
@@ -95,7 +95,7 @@ export function PortalArchive() {
               {entries.slice(0, 3).map((entry, index) => (
                 <button className={`receipt-card ${index === 0 ? "featured" : ""}`} key={entry.round} onClick={() => act(`${entry.round}회 상세 증빙을 확인합니다.`)}>
                   <div className="receipt-top"><span>LOTTO 6/45</span><span>{entry.date}</span></div>
-                  <div className="receipt-stamp">VERIFIED<br /><small>GOLDEN PICK</small></div>
+                  <div className="receipt-stamp">VERIFIED<br /><small>LOTTORICO</small></div>
                   <p className="receipt-round">{entry.round}<small>회</small></p>
                   <strong className="receipt-rank">{entry.rank}</strong>
                   <b className="receipt-money">{entry.amount}</b>
@@ -140,7 +140,7 @@ export function PortalArchive() {
         </div>
       </main>
 
-      <footer className="portal-a-footer"><div className="portal-a-shell footer-inner"><div><b>GOLDEN PICK</b><span>실제 기록과 읽기 쉬운 정보로 만드는 로또 아카이브</span></div><div className="footer-badge"><img src="/__mockup/images/customer-satisfaction-no-bg.png" alt="한국고객만족도 1위 표식" /><span>고객 만족 관련 표식<br /><small>서비스 참고용 배지</small></span></div><div className="footer-links"><button onClick={() => act("이용약관")}>이용약관</button><button onClick={() => act("개인정보처리방침")}>개인정보처리방침</button><button onClick={() => act("고객센터")}>고객센터</button></div></div></footer>
+      <footer className="portal-a-footer"><div className="portal-a-shell footer-inner"><div><b>로또리코</b><span>실제 기록과 읽기 쉬운 정보로 만드는 로또 아카이브</span></div><div className="footer-badge"><img src="/__mockup/images/customer-satisfaction-no-bg.png" alt="한국고객만족도 1위 표식" /><span>고객 만족 관련 표식<br /><small>서비스 참고용 배지</small></span></div><div className="footer-links"><button onClick={() => act("이용약관")}>이용약관</button><button onClick={() => act("개인정보처리방침")}>개인정보처리방침</button><button onClick={() => act("고객센터")}>고객센터</button></div></div></footer>
       {notice && <div className="portal-toast"><Trophy size={16} /> {notice}<button onClick={() => setNotice("")}><X size={14} /></button></div>}
     </div>
   );

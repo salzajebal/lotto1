@@ -11,7 +11,7 @@ export function DataCenter() {
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">
               G
             </div>
-            <span className="font-bold text-lg tracking-tight text-slate-100">GOLDEN PICK <span className="text-blue-400">DATA</span></span>
+            <span className="font-bold text-lg tracking-tight text-slate-100">LOTTORICO <span className="text-blue-400">DATA</span></span>
           </div>
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-400">
             <a href="#analysis" className="hover:text-blue-300 transition-colors">주간 분석</a>
@@ -148,14 +148,14 @@ export function DataCenter() {
                   
                   <div className="space-y-3 pt-2">
                     <div className="flex justify-between items-end">
-                      <span className="text-sm font-medium text-slate-300">골든 픽 예측 적중률</span>
+                      <span className="text-sm font-medium text-slate-300">로또리코 예측 적중률</span>
                       <span className="text-2xl font-black text-blue-300">82%</span>
                     </div>
                     <div className="w-full h-2 bg-slate-700 rounded-full overflow-hidden">
                       <div className="w-[82%] h-full bg-blue-500 rounded-full"></div>
                     </div>
                     <p className="text-xs text-slate-400 leading-relaxed">
-                      1184회차에서 골든 픽 시스템은 총 4.5개의 당첨 번호를 예측 범위 내에서 적중시켰습니다.
+                       1184회차에서 로또리코 시스템은 총 4.5개의 당첨 번호를 예측 범위 내에서 적중시켰습니다.
                     </p>
                   </div>
                   
@@ -232,7 +232,7 @@ export function DataCenter() {
                 <span className="text-blue-300">가장 현실적인 투자</span>
               </h2>
               <p className="text-lg text-slate-400 mb-8 leading-relaxed">
-                매주 수만 개의 조합 중 골든 픽 데이터 센터의 검증을 거친 최정예 번호만을 멤버십 회원에게 제공합니다.
+                 매주 수만 개의 조합 중 로또리코 데이터 센터의 검증을 거친 최정예 번호만을 멤버십 회원에게 제공합니다.
               </p>
               
               <ul className="space-y-4 mb-10">
@@ -299,7 +299,7 @@ export function DataCenter() {
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
             <div>
               <h2 className="text-3xl font-extrabold text-slate-100 tracking-tight mb-3">데이터가 증명하는 결과</h2>
-              <p className="text-slate-400 text-lg">최근 골든 픽 분석을 통해 배출된 실제 당첨 회원들의 기록입니다.</p>
+              <p className="text-slate-400 text-lg">최근 로또리코 분석을 통해 배출된 실제 당첨 회원들의 기록입니다.</p>
             </div>
             <button className="text-blue-300 font-bold hover:text-blue-200 transition-colors flex items-center gap-1">
               데이터 더 보기 <ChevronRight size={16} />
@@ -348,10 +348,10 @@ export function DataCenter() {
                 <div className="w-8 h-8 bg-slate-800 rounded-lg flex items-center justify-center text-slate-300 font-bold text-lg">
                   G
                 </div>
-                <span className="font-bold text-lg tracking-tight text-slate-200">GOLDEN PICK <span className="text-blue-500">DATA</span></span>
+                <span className="font-bold text-lg tracking-tight text-slate-200">LOTTORICO <span className="text-blue-500">DATA</span></span>
               </div>
               <p className="text-sm text-slate-500 max-w-sm mb-6 leading-relaxed">
-                로또는 운이 아닙니다. 정확한 데이터와 일관된 기준으로 확률을 통제하는 과정입니다. 골든 픽과 함께 현명하게 도전하세요.
+                로또는 운이 아닙니다. 정확한 데이터와 일관된 기준으로 확률을 통제하는 과정입니다. 로또리코와 함께 현명하게 도전하세요.
               </p>
             </div>
             
@@ -375,7 +375,7 @@ export function DataCenter() {
             </div>
           </div>
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-slate-600">
-            <div>© 2025 GOLDEN PICK DATA CENTER. ALL RIGHTS RESERVED.</div>
+            <div>© 2025 LOTTORICO DATA CENTER. ALL RIGHTS RESERVED.</div>
             <div className="flex items-center gap-4">
               <span className="cursor-pointer hover:text-slate-300">개인정보처리방침</span>
               <span className="cursor-pointer hover:text-slate-300">이용약관</span>

@@ -39,7 +39,7 @@ export function CommunityService() {
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2 cursor-pointer">
             <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold">G</div>
-            <span className="font-bold text-xl tracking-tight text-slate-900">골든픽 커뮤니티</span>
+            <span className="font-bold text-xl tracking-tight text-slate-900">로또리코 커뮤니티</span>
           </div>
           <nav className="hidden md:flex items-center gap-8 font-medium text-slate-600">
             <a href="#" className="text-blue-600 font-bold">라운지</a>
@@ -72,7 +72,7 @@ export function CommunityService() {
               </h1>
               <p className="text-lg text-slate-600 mb-8 max-w-xl mx-auto lg:mx-0 leading-relaxed break-keep">
                 투명하게 공유되는 당첨 후기와 10만 회원의 데이터 토론. 
-                매주 골든픽 커뮤니티에서 새로운 당첨자가 탄생합니다.
+                매주 로또리코 커뮤니티에서 새로운 당첨자가 탄생합니다.
               </p>
               <div className="flex flex-col sm:flex-row items-center gap-3 justify-center lg:justify-start">
                 <button className="w-full sm:w-auto px-8 py-4 rounded-xl bg-blue-600 text-white font-bold text-lg hover:bg-blue-700 transition-all active:scale-[0.98] shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2">
@@ -280,10 +280,10 @@ export function CommunityService() {
         <div className="max-w-6xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-md bg-slate-200 flex items-center justify-center text-slate-500 font-bold text-xs">G</div>
-            <span className="font-bold text-slate-400 text-sm tracking-wide">GOLDEN PICK 커뮤니티</span>
+            <span className="font-bold text-slate-400 text-sm tracking-wide">로또리코 커뮤니티</span>
           </div>
           <div className="text-xs text-slate-400 font-medium text-center md:text-right">
-            © 2025 GOLDEN PICK. ACTUAL WINNINGS, TRANSPARENT RECORDS.<br/>
+            © 2025 LOTTORICO. ACTUAL WINNINGS, TRANSPARENT RECORDS.<br/>
             이용약관 | 개인정보처리방침
           </div>
         </div>

@@ -24,7 +24,7 @@ export function ProofArchive() {
         <div className="max-w-[1120px] mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <ShieldCheck size={24} className="text-blue-600" />
-            <span className="font-extrabold text-lg tracking-tight">GOLDEN PICK <span className="text-slate-400 font-normal">| ARCHIVE</span></span>
+            <span className="font-extrabold text-lg tracking-tight">LOTTORICO <span className="text-slate-400 font-normal">| ARCHIVE</span></span>
           </div>
           <nav className="hidden md:flex gap-8 text-sm font-medium text-slate-600">
             <a href="#" className="text-blue-600">당첨 증빙</a>
@@ -59,7 +59,7 @@ export function ProofArchive() {
             <p className="text-slate-300 text-lg leading-relaxed mb-8 font-medium">
               화려한 문구로 포장하지 않습니다.<br/>
               투명하게 기록된 당첨 회차, 구매 지역, 당첨 등수가<br/>
-              골든픽 분석의 유일한 증거입니다.
+              로또리코 분석의 유일한 증거입니다.
             </p>
             <div className="flex gap-3">
               <button className="px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded shadow-lg shadow-blue-900/20 transition-colors flex items-center gap-2">
@@ -310,7 +310,7 @@ export function ProofArchive() {
           <div className="md:col-span-2">
             <div className="flex items-center gap-2 mb-4">
               <ShieldCheck size={20} className="text-slate-400" />
-              <span className="font-extrabold text-slate-900 tracking-tight">GOLDEN PICK</span>
+              <span className="font-extrabold text-slate-900 tracking-tight">LOTTORICO</span>
             </div>
             <p className="text-slate-500 text-sm leading-relaxed max-w-xs">
               투명한 기록과 데이터 기반의 분석으로<br/>
@@ -335,7 +335,7 @@ export function ProofArchive() {
           </div>
         </div>
         <div className="max-w-[1120px] mx-auto px-6 mt-16 pt-8 border-t border-[#E2E8F0] flex flex-col md:flex-row items-center justify-between text-xs text-slate-400">
-          <p>© 2024 GOLDEN PICK. ALL RIGHTS RESERVED.</p>
+          <p>© 2024 LOTTORICO. ALL RIGHTS RESERVED.</p>
           <div className="flex gap-4 mt-4 md:mt-0">
             <a href="#" className="hover:text-slate-600">이용약관</a>
             <a href="#" className="hover:text-slate-600 font-bold">개인정보처리방침</a>

@@ -36,8 +36,9 @@ function AuthScreen({ needsBootstrap }: { needsBootstrap: boolean }) {
       <Card className="w-full max-w-sm">
         <div className="text-center mb-8">
           <div className="w-12 h-12 border-2 border-[var(--ad-gold)] rotate-45 mx-auto flex items-center justify-center mb-4 bg-[var(--ad-gold-bg)]">
-            <span className="-rotate-45 text-[var(--ad-gold)] font-bold text-xl">7</span>
+            <span className="-rotate-45 text-[var(--ad-gold)] font-bold text-xl">R</span>
           </div>
+          <p className="text-[var(--ad-gold)] text-sm font-bold tracking-tight mb-2">로또리코</p>
           <h1 className="text-2xl font-bold tracking-tight text-white">
             {needsBootstrap ? '초기 설정' : '운영 콘솔 로그인'}
           </h1>
@@ -55,7 +56,7 @@ function AuthScreen({ needsBootstrap }: { needsBootstrap: boolean }) {
           )}
           <div>
             <Label>이메일</Label>
-            <Input required type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="admin@goldenpick.com" />
+            <Input required type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="admin@lottorico.com" />
           </div>
           <div>
             <Label>비밀번호</Label>
@@ -97,7 +98,7 @@ function AdminLayout({ user }: { user: any }) {
             <span className="-rotate-45 text-[var(--ad-gold)] font-bold text-sm">7</span>
           </div>
           <div>
-            <h2 className="font-bold text-sm tracking-tight text-white">GOLDEN PICK</h2>
+            <h2 className="font-bold text-sm tracking-tight text-white">로또리코</h2>
             <p className="text-[10px] text-[var(--ad-muted)] uppercase tracking-widest">운영 콘솔</p>
           </div>
         </div>

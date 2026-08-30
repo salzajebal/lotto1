@@ -41,19 +41,19 @@ export function PortalUnified() {
     <div className="portal-c">
       <div className="portal-utility">
         <div className="portal-wrap utility-inner">
-          <span>골든픽 <b>실제 기록 아카이브</b></span>
+          <span>로또리코 <b>실제 기록 아카이브</b></span>
           <div className="utility-links"><button onClick={() => flash('로그인 화면을 준비 중입니다.')}>로그인</button><i /> <button onClick={() => flash('회원가입 화면을 준비 중입니다.')}>회원가입</button><i /> <button onClick={() => flash('고객센터로 연결합니다.')}>고객센터</button></div>
         </div>
       </div>
       <header className="portal-header">
         <div className="portal-wrap header-inner">
-          <button className="portal-logo" onClick={() => flash('골든픽 홈입니다.')}>
-            <span className="logo-mark"><span>G</span></span><span><strong>GOLDEN PICK</strong><small>로또 분석 번호</small></span>
+          <button className="portal-logo" onClick={() => flash('로또리코 홈입니다.')}>
+            <span className="logo-mark"><span>R</span></span><span><strong>LOTTORICO</strong><small>로또 분석 번호</small></span>
           </button>
           <nav className={menuOpen ? 'portal-nav open' : 'portal-nav'}>
             <button className="active" onClick={() => flash('현재 페이지입니다.')}>홈</button>
             <button onClick={() => flash('실제 당첨 기록으로 이동합니다.')}>실제 당첨</button>
-            <button onClick={() => flash('분석실로 이동합니다.')}>로또리치 분석실</button>
+            <button onClick={() => flash('분석실로 이동합니다.')}>로또리코 분석실</button>
             <button onClick={() => flash('커뮤니티로 이동합니다.')}>로또 커뮤니티</button>
             <button onClick={() => flash('고객센터로 이동합니다.')}>고객센터</button>
             <button className="join" onClick={() => flash('골드회원 안내를 준비 중입니다.')}>골드회원 가입</button>
@@ -63,7 +63,7 @@ export function PortalUnified() {
       </header>
       <div className="portal-status">
         <div className="portal-wrap status-inner">
-          <div className="crumb"><span>HOME</span><ChevronRight size={13} /><b>골든픽 정보센터</b></div>
+          <div className="crumb"><span>HOME</span><ChevronRight size={13} /><b>로또리코 정보센터</b></div>
           <div className="status-live"><span /> 매주 토요일 업데이트 <b>·</b> 1,184회 결과 반영</div>
         </div>
       </div>
@@ -71,9 +71,9 @@ export function PortalUnified() {
       <main className="portal-wrap portal-main">
         <section className="portal-intro">
           <div>
-            <p className="section-kicker"><span /> GOLDEN PICK INFORMATION CENTER</p>
+            <p className="section-kicker"><span /> LOTTORICO INFORMATION CENTER</p>
             <h1>당첨의 순간부터<br /><em>다음 회차의 기준</em>까지</h1>
-            <p className="intro-copy">실제 당첨 기록과 회원들의 이야기를 한 곳에서 확인하세요.<br className="desktop-only" /> 골든픽은 결과를 남기고, 매주 같은 기준으로 숫자를 읽습니다.</p>
+            <p className="intro-copy">실제 당첨 기록과 회원들의 이야기를 한 곳에서 확인하세요.<br className="desktop-only" /> 로또리코는 결과를 남기고, 매주 같은 기준으로 숫자를 읽습니다.</p>
           </div>
           <div className="round-panel">
             <div className="panel-label"><CalendarDays size={15} /> 최신 당첨 결과</div>
@@ -85,7 +85,7 @@ export function PortalUnified() {
 
         <section className="portal-grid">
           <div className="portal-left">
-            <div className="block-heading"><div><span className="section-kicker">WINNING ARCHIVE</span><h2>로또리치 <em>당첨자 후기</em></h2></div><ActionButton onClick={() => flash('전체 당첨 후기 목록입니다.')}>전체보기 <ChevronRight size={16} /></ActionButton></div>
+            <div className="block-heading"><div><span className="section-kicker">WINNING ARCHIVE</span><h2>로또리코 <em>당첨자 후기</em></h2></div><ActionButton onClick={() => flash('전체 당첨 후기 목록입니다.')}>전체보기 <ChevronRight size={16} /></ActionButton></div>
             <div className="winner-table">
               <div className="table-head"><span>회차 / 추첨일</span><span>등수</span><span>당첨금</span><span>구매 지역</span><span /></div>
               {wins.map((win) => <button className="winner-row" key={win.round} onClick={() => flash(`${win.round} 당첨 기록을 확인합니다.`)}>
@@ -120,12 +120,12 @@ export function PortalUnified() {
               <small>지난 20회 기준 · 참고용 통계</small>
             </div>
             <div className="kakao-box"><div className="kakao-icon"><MessageCircle size={22} /></div><div><b>궁금한 점은 카카오톡으로</b><small>회원가입부터 분석 서비스까지<br />상담원이 안내해드립니다.</small></div><button onClick={() => flash('카카오톡 상담 연결을 준비 중입니다.')}><Headphones size={16} /> 상담하기</button></div>
-            <div className="membership-box"><span className="membership-ribbon">GOLD</span><p>골든픽 골드회원</p><strong>330,000<span>원</span></strong><small>매주 분석 번호 · 전용 리포트</small><button onClick={() => flash('멤버십 상세 안내를 준비 중입니다.')}>회원 혜택 보기 <ArrowUpRight size={14} /></button></div>
+            <div className="membership-box"><span className="membership-ribbon">GOLD</span><p>로또리코 골드회원</p><strong>330,000<span>원</span></strong><small>매주 분석 번호 · 전용 리포트</small><button onClick={() => flash('멤버십 상세 안내를 준비 중입니다.')}>회원 혜택 보기 <ArrowUpRight size={14} /></button></div>
           </aside>
         </section>
 
         <section className="community-block">
-          <div className="community-head"><div><span className="section-kicker">GOLDEN PICK COMMUNITY</span><h2>회원들과 나누는 <em>이번 주 이야기</em></h2></div><ActionButton onClick={() => flash('커뮤니티 전체보기')}>커뮤니티 바로가기 <ArrowUpRight size={15} /></ActionButton></div>
+          <div className="community-head"><div><span className="section-kicker">LOTTORICO COMMUNITY</span><h2>회원들과 나누는 <em>이번 주 이야기</em></h2></div><ActionButton onClick={() => flash('커뮤니티 전체보기')}>커뮤니티 바로가기 <ArrowUpRight size={15} /></ActionButton></div>
           <div className="community-tabs"><button className={activeTab === 'recent' ? 'selected' : ''} onClick={() => setActiveTab('recent')}>최신글</button><button className={activeTab === 'popular' ? 'selected' : ''} onClick={() => setActiveTab('popular')}>인기글</button><span>오늘도 438명의 회원이 이야기를 나누고 있습니다.</span></div>
           <div className="post-list">{posts.map((post, i) => <button className="post-row" key={post.title} onClick={() => flash(`${post.title} 게시글을 엽니다.`)}><span className={`post-index ${i === 0 ? 'hot' : ''}`}>{i === 0 ? 'HOT' : String(i + 1).padStart(2, '0')}</span><span className="post-copy"><b>{post.title}</b><small><em>{post.tag}</em> {post.author} · {post.time}</small></span><span className="reply"><MessageCircle size={14} /> {post.replies}</span><ChevronRight size={15} /></button>)}</div>
         </section>
@@ -135,7 +135,7 @@ export function PortalUnified() {
           <div className="trust-item"><ShieldCheck size={25} /><b>투명한 기록 관리</b><small>공개 전 관리자 검토</small></div><div className="trust-item"><Trophy size={25} /><b>회원 경험 중심</b><small>실제 후기와 결과 공유</small></div><div className="trust-item"><Clock3 size={25} /><b>매주 업데이트</b><small>토요일 추첨 후 반영</small></div>
         </section>
       </main>
-      <footer className="portal-footer"><div className="portal-wrap footer-inner"><div><b>GOLDEN PICK</b><p>실제 기록과 읽기 쉬운 분석으로<br />다음 회차를 준비합니다.</p></div><div className="footer-company"><span>골든픽 정보센터</span><span>대표자 : 골든픽 운영팀　사업자 정보 확인</span><span>고객센터 : 카카오톡 채널 상담</span></div><div className="footer-bottom">이용약관　 개인정보처리방침　 청소년보호정책 <small>© 2024 GOLDEN PICK. ALL RIGHTS RESERVED.</small></div></div></footer>
+      <footer className="portal-footer"><div className="portal-wrap footer-inner"><div><b>로또리코</b><p>실제 기록과 읽기 쉬운 분석으로<br />다음 회차를 준비합니다.</p></div><div className="footer-company"><span>로또리코 정보센터</span><span>대표자 : 로또리코 운영팀　사업자 정보 확인</span><span>고객센터 : 카카오톡 채널 상담</span></div><div className="footer-bottom">이용약관　 개인정보처리방침　 청소년보호정책 <small>© 2024 로또리코. ALL RIGHTS RESERVED.</small></div></div></footer>
       {notice && <div className="portal-toast"><Bell size={16} /> {notice.text}</div>}
     </div>
   );
