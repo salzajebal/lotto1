@@ -417,7 +417,7 @@ router.post("/admin/members", async (req, res): Promise<void> => {
     email: z.string().trim().email().or(z.literal("")).default(""),
     phone: z.string().trim().default(""),
     gradeId: z.number().int().nullable().optional(),
-    status: z.string().default("active"),
+    status: z.enum(["pending", "active", "inactive", "rejected"]).default("active"),
     assignedStaffId: z.number().int().nullable().optional(),
     paymentAmount: z.number().int().nonnegative().default(0),
     monthlyRevenue: z.number().int().nonnegative().default(0),
@@ -447,7 +447,7 @@ router.patch("/admin/members/:id", async (req, res): Promise<void> => {
     email: z.string().trim().email().or(z.literal("")).optional(),
     phone: z.string().trim().optional(),
     gradeId: z.number().int().nullable().optional(),
-    status: z.string().optional(),
+    status: z.enum(["pending", "active", "inactive", "rejected"]).optional(),
     assignedStaffId: z.number().int().nullable().optional(),
     paymentAmount: z.number().int().nonnegative().optional(),
     monthlyRevenue: z.number().int().nonnegative().optional(),
@@ -887,6 +887,22 @@ router.post("/support", publicWriteRateLimit, async (req, res): Promise<void> =>
     subject: body.category,
   }).returning();
   res.status(201).json({ id: inquiry.id, message: "문의가 접수되었습니다." });
+});
+
+router.post("/member-signups", publicWriteRateLimit, async (req, res): Promise<void> => {
+  const body = parse(z.object({
+    name: z.string().trim().min(1, "이름을 입력해주세요.").max(80),
+    email: z.string().trim().email("올바른 이메일을 입력해주세요.").max(120),
+  }), req.body, res);
+  if (!body) return;
+  const [member] = await db.insert(membersTable).values({
+    name: body.name,
+    email: body.email.toLowerCase(),
+    status: "pending",
+    source: "website",
+    notes: "공개 홈페이지 회원가입 신청",
+  }).returning();
+  res.status(201).json({ id: member.id, message: "회원가입 신청이 접수되었습니다." });
 });
 
 router.get("/site-settings", async (_req, res): Promise<void> => {

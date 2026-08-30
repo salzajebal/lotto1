@@ -3,6 +3,20 @@ import { useMembers, useGrades, useStaff, useCreateMember, useUpdateMember } fro
 import { Card, Table, Th, Td, Badge, Button, Input, Select, Modal, Label, Textarea } from '../components/UI';
 import { Search, Plus, Edit2, Loader2 } from 'lucide-react';
 
+const memberStatusLabels: Record<string, string> = {
+  pending: '승인 대기',
+  active: '승인 완료',
+  inactive: '비활성',
+  rejected: '반려',
+};
+
+const memberStatusVariants: Record<string, 'default' | 'success' | 'warning' | 'danger'> = {
+  pending: 'warning',
+  active: 'success',
+  inactive: 'default',
+  rejected: 'danger',
+};
+
 export default function MembersView() {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -82,8 +96,10 @@ export default function MembersView() {
         </div>
         <Select className="w-full sm:w-48" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
           <option value="all">전체 상태</option>
-          <option value="active">활성</option>
+           <option value="pending">승인 대기</option>
+           <option value="active">승인 완료</option>
           <option value="inactive">비활성</option>
+           <option value="rejected">반려</option>
         </Select>
         <Select className="w-full sm:w-48" value={gradeFilter} onChange={e => setGradeFilter(Number(e.target.value))}>
           <option value={0}>전체 등급</option>
@@ -123,7 +139,15 @@ export default function MembersView() {
                   ) : <span className="text-[var(--ad-muted)]">-</span>}
                 </Td>
                 <Td>{m.staffName || <span className="text-[var(--ad-muted)]">미배정</span>}</Td>
-                <Td><Badge variant={m.status === 'active' ? 'success' : 'default'}>{m.status === 'active' ? '활성' : '비활성'}</Badge></Td>
+               <Td>
+                 <Badge variant={memberStatusVariants[m.status] || 'default'}>{memberStatusLabels[m.status] || m.status}</Badge>
+                 {m.status === 'pending' && (
+                   <div className="flex gap-2 mt-2">
+                     <Button size="sm" onClick={() => updateMember.mutate({ id: m.id, data: { status: 'active' } })} disabled={updateMember.isPending}>승인</Button>
+                     <Button size="sm" variant="danger" onClick={() => updateMember.mutate({ id: m.id, data: { status: 'rejected' } })} disabled={updateMember.isPending}>반려</Button>
+                   </div>
+                 )}
+               </Td>
                 <Td className="text-right">
                   <Button variant="ghost" size="sm" onClick={() => openModal(m)}><Edit2 size={14} /></Button>
                 </Td>
@@ -146,8 +170,10 @@ export default function MembersView() {
             <div>
               <Label>상태</Label>
               <Select value={form.status} onChange={e => setForm({...form, status: e.target.value})}>
-                <option value="active">활성</option>
+                 <option value="pending">승인 대기</option>
+                 <option value="active">승인 완료</option>
                 <option value="inactive">비활성</option>
+                 <option value="rejected">반려</option>
               </Select>
             </div>
           </div>
