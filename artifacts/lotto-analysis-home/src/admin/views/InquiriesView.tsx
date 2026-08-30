@@ -1,18 +1,28 @@
 import { useState } from 'react';
-import { useInquiries, useUpdateInquiry, useInquiryNotes, useCreateInquiryNote, useStaff } from '../api';
-import { Card, Table, Th, Td, Badge, Button, Select, Modal, Label, Textarea } from '../components/UI';
-import { Loader2, MessageCircle, Send, Check } from 'lucide-react';
+import { useInquiries, useCreateInquiry, useUpdateInquiry, useInquiryNotes, useCreateInquiryNote, useStaff } from '../api';
+import { Card, Table, Th, Td, Badge, Button, Select, Modal, Label, Textarea, Input } from '../components/UI';
+import { Loader2, MessageCircle, Send, Plus } from 'lucide-react';
 
 export default function InquiriesView({ user }: { user: { role: string } }) {
   const [statusFilter, setStatusFilter] = useState('all');
   const { data: inquiries, isLoading } = useInquiries({ status: statusFilter !== 'all' ? statusFilter : undefined });
   const { data: staffList } = useStaff();
   
+  const createInquiry = useCreateInquiry();
   const updateInquiry = useUpdateInquiry();
   const createNote = useCreateInquiryNote();
 
   const [activeInquiry, setActiveInquiry] = useState<any>(null);
   const [noteContent, setNoteContent] = useState('');
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [form, setForm] = useState({
+    name: '',
+    contact: '',
+    category: '일반 문의',
+    subject: '',
+    message: '',
+    priority: 'normal' as 'low' | 'normal' | 'high' | 'urgent',
+  });
 
   const { data: notes, isLoading: notesLoading } = useInquiryNotes(activeInquiry?.id || 0);
 
@@ -34,6 +44,31 @@ export default function InquiriesView({ user }: { user: { role: string } }) {
         const staffName = staffList?.find((s: any) => s.id === staffId)?.name;
         setActiveInquiry({ ...activeInquiry, assignedStaffId: staffId, staffName });
       }
+    });
+  };
+
+  const handlePriorityChange = (priority: string) => {
+    if (!activeInquiry) return;
+    updateInquiry.mutate({ id: activeInquiry.id, data: { priority } }, {
+      onSuccess: () => setActiveInquiry({ ...activeInquiry, priority }),
+    });
+  };
+
+  const handleCreate = (e: React.FormEvent) => {
+    e.preventDefault();
+    createInquiry.mutate(form, {
+      onSuccess: (created) => {
+        setCreateModalOpen(false);
+        setActiveInquiry(created);
+        setForm({
+          name: '',
+          contact: '',
+          category: '일반 문의',
+          subject: '',
+          message: '',
+          priority: 'normal',
+        });
+      },
     });
   };
 
@@ -60,6 +95,15 @@ export default function InquiriesView({ user }: { user: { role: string } }) {
     }
   };
 
+  const getPriorityBadge = (priority: string) => {
+    switch (priority) {
+      case 'urgent': return <Badge variant="danger">긴급</Badge>;
+      case 'high': return <Badge variant="warning">높음</Badge>;
+      case 'low': return <Badge variant="default">낮음</Badge>;
+      default: return <Badge variant="info">보통</Badge>;
+    }
+  };
+
   return (
     <div className="flex h-full flex-col lg:flex-row gap-6">
       {/* List Panel */}
@@ -69,12 +113,16 @@ export default function InquiriesView({ user }: { user: { role: string } }) {
             <h1 className="text-2xl font-bold text-white mb-1">고객센터 문의</h1>
             <p className="text-[var(--ad-muted)] text-sm">들어온 문의를 확인하고 답변을 작성합니다.</p>
           </div>
-          <Select className="w-32" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
-            <option value="all">전체 상태</option>
-            <option value="new">신규</option>
-            <option value="in_progress">진행중</option>
-            <option value="resolved">답변완료</option>
-          </Select>
+          <div className="flex items-center gap-2">
+            <Button onClick={() => setCreateModalOpen(true)} className="gap-1.5"><Plus size={15} /> 새 문의 등록</Button>
+            <Select className="w-32" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+              <option value="all">전체 상태</option>
+              <option value="new">신규</option>
+              <option value="in_progress">진행중</option>
+              <option value="resolved">답변완료</option>
+              <option value="closed">종료</option>
+            </Select>
+          </div>
         </div>
 
         <Card className="flex-1 flex flex-col p-0 overflow-hidden">
@@ -86,6 +134,7 @@ export default function InquiriesView({ user }: { user: { role: string } }) {
                 <thead className="sticky top-0 bg-[var(--ad-panel)] z-10">
                   <tr>
                     <Th>상태</Th>
+                    <Th>우선순위</Th>
                     <Th>문의자</Th>
                     <Th>주제</Th>
                     <Th>담당자</Th>
@@ -100,6 +149,7 @@ export default function InquiriesView({ user }: { user: { role: string } }) {
                       className={`cursor-pointer border-b border-[var(--ad-border)] transition-colors ${activeInquiry?.id === iq.id ? 'bg-[var(--ad-gold-bg)]' : 'hover:bg-[var(--ad-panel-hover)]'}`}
                     >
                       <Td>{getStatusBadge(iq.status)}</Td>
+                      <Td>{getPriorityBadge(iq.priority)}</Td>
                       <Td className="font-semibold text-white">{iq.name}</Td>
                       <Td className="truncate max-w-[200px] text-[var(--ad-muted)]">{iq.subject}</Td>
                       <Td>{iq.staffName || '-'}</Td>
@@ -107,7 +157,7 @@ export default function InquiriesView({ user }: { user: { role: string } }) {
                     </tr>
                   ))}
                   {inquiries?.length === 0 && (
-                    <tr><Td colSpan={5} className="text-center py-8 text-[var(--ad-muted)]">조건에 맞는 문의가 없습니다.</Td></tr>
+                    <tr><Td colSpan={6} className="text-center py-8 text-[var(--ad-muted)]">조건에 맞는 문의가 없습니다.</Td></tr>
                   )}
                 </tbody>
               </table>
@@ -129,15 +179,16 @@ export default function InquiriesView({ user }: { user: { role: string } }) {
                 <span><strong className="text-white">문의자:</strong> {activeInquiry.name}</span>
                 <span><strong className="text-white">연락처:</strong> {activeInquiry.contact}</span>
                 <span><strong className="text-white">유형:</strong> {activeInquiry.category}</span>
+                <span><strong className="text-white">우선순위:</strong> {activeInquiry.priority === 'urgent' ? '긴급' : activeInquiry.priority === 'high' ? '높음' : activeInquiry.priority === 'low' ? '낮음' : '보통'}</span>
               </div>
               
               <div className="p-3 bg-[var(--ad-bg)] rounded-md border border-[var(--ad-border)] text-sm text-[#E2E8F0] whitespace-pre-wrap leading-relaxed">
                 {activeInquiry.message}
               </div>
 
-              <div className="mt-4 flex gap-2">
+              <div className="mt-4 grid grid-cols-3 gap-2">
                 <Select 
-                  className="flex-1 text-xs py-1.5" 
+                  className="text-xs py-1.5" 
                   value={activeInquiry.assignedStaffId || 0} 
                   onChange={(e) => handleAssign(Number(e.target.value))}
                   disabled={updateInquiry.isPending || user.role !== 'owner'}
@@ -146,7 +197,7 @@ export default function InquiriesView({ user }: { user: { role: string } }) {
                   {activeStaff.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </Select>
                 <Select 
-                  className="flex-1 text-xs py-1.5" 
+                  className="text-xs py-1.5" 
                   value={activeInquiry.status} 
                   onChange={(e) => handleStatusChange(e.target.value)}
                   disabled={updateInquiry.isPending}
@@ -155,6 +206,17 @@ export default function InquiriesView({ user }: { user: { role: string } }) {
                   <option value="in_progress">진행중</option>
                   <option value="resolved">답변완료</option>
                   <option value="closed">종료</option>
+                </Select>
+                <Select
+                  className="text-xs py-1.5"
+                  value={activeInquiry.priority || 'normal'}
+                  onChange={(e) => handlePriorityChange(e.target.value)}
+                  disabled={updateInquiry.isPending}
+                >
+                  <option value="urgent">긴급</option>
+                  <option value="high">높음</option>
+                  <option value="normal">보통</option>
+                  <option value="low">낮음</option>
                 </Select>
               </div>
             </div>
@@ -205,6 +267,57 @@ export default function InquiriesView({ user }: { user: { role: string } }) {
           </div>
         )}
       </Card>
+
+      <Modal title="새 고객센터 문의 등록" isOpen={createModalOpen} onClose={() => !createInquiry.isPending && setCreateModalOpen(false)}>
+        <form onSubmit={handleCreate} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label>문의자 이름 *</Label>
+              <Input required maxLength={80} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="고객 이름" />
+            </div>
+            <div>
+              <Label>연락처 *</Label>
+              <Input required maxLength={120} value={form.contact} onChange={e => setForm({ ...form, contact: e.target.value })} placeholder="전화번호 또는 카카오톡 ID" />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label>문의 유형 *</Label>
+              <Select required value={form.category} onChange={e => setForm({ ...form, category: e.target.value })}>
+                <option>일반 문의</option>
+                <option>멤버십 상담</option>
+                <option>분석 번호</option>
+                <option>결제</option>
+                <option>기타</option>
+              </Select>
+            </div>
+            <div>
+              <Label>우선순위 *</Label>
+              <Select value={form.priority} onChange={e => setForm({ ...form, priority: e.target.value as typeof form.priority })}>
+                <option value="urgent">긴급</option>
+                <option value="high">높음</option>
+                <option value="normal">보통</option>
+                <option value="low">낮음</option>
+              </Select>
+            </div>
+          </div>
+          <div>
+            <Label>제목 *</Label>
+            <Input required maxLength={200} value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} placeholder="문의 제목" />
+          </div>
+          <div>
+            <Label>문의 내용 *</Label>
+            <Textarea required maxLength={3000} value={form.message} onChange={e => setForm({ ...form, message: e.target.value })} placeholder="상담 내용을 기록해주세요." />
+          </div>
+          {createInquiry.isError && <p className="text-sm text-[#F85149]">{createInquiry.error instanceof Error ? createInquiry.error.message : '문의 등록에 실패했습니다.'}</p>}
+          <div className="pt-2 flex justify-end gap-2">
+            <Button type="button" variant="secondary" onClick={() => setCreateModalOpen(false)} disabled={createInquiry.isPending}>취소</Button>
+            <Button type="submit" disabled={createInquiry.isPending}>
+              {createInquiry.isPending ? <Loader2 size={15} className="animate-spin" /> : '문의 등록'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

@@ -1155,11 +1155,30 @@ router.get("/admin/inquiries", async (req, res): Promise<void> => {
   res.json(rows.map(({ inquiry, staffName }) => ({ ...inquiry, staffName })));
 });
 
+router.post("/admin/inquiries", async (req, res): Promise<void> => {
+  const body = parse(z.object({
+    name: z.string().trim().min(1, "문의자 이름을 입력해주세요.").max(80),
+    contact: z.string().trim().min(1, "연락처를 입력해주세요.").max(120),
+    category: z.string().trim().min(1, "문의 유형을 선택해주세요.").max(50),
+    subject: z.string().trim().min(1, "제목을 입력해주세요.").max(200),
+    message: z.string().trim().min(1, "문의 내용을 입력해주세요.").max(3000),
+    priority: z.enum(["low", "normal", "high", "urgent"]).default("normal"),
+  }), req.body, res);
+  if (!body) return;
+  const [inquiry] = await db.insert(supportInquiriesTable).values({
+    ...body,
+    status: "new",
+    assignedStaffId: isOwner(req) ? null : req.adminUser!.id,
+  }).returning();
+  await recordEvent(req, "create", "inquiry", inquiry.id, "관리자 직접 등록");
+  res.status(201).json(inquiry);
+});
+
 router.patch("/admin/inquiries/:id", async (req, res): Promise<void> => {
   const id = int(req.params.id);
   const body = parse(z.object({
-    status: z.string().optional(),
-    priority: z.string().optional(),
+    status: z.enum(["new", "in_progress", "resolved", "closed"]).optional(),
+    priority: z.enum(["low", "normal", "high", "urgent"]).optional(),
     assignedStaffId: z.number().int().nullable().optional(),
   }), req.body, res);
   if (!body) return;

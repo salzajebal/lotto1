@@ -286,6 +286,27 @@ export function useInquiries(params?: { status?: string }) {
   return useQuery({ queryKey: ['adminInquiries', params], queryFn: () => fetcher(`${API_BASE}/inquiries?${qs.toString()}`) });
 }
 
+export function useCreateInquiry() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: (data: {
+      name: string;
+      contact: string;
+      category: string;
+      subject: string;
+      message: string;
+      priority: 'low' | 'normal' | 'high' | 'urgent';
+    }) => fetcher(`${API_BASE}/inquiries`, { method: 'POST', body: JSON.stringify(data) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminInquiries'] });
+      queryClient.invalidateQueries({ queryKey: ['adminDashboard'] });
+      toast({ title: '문의 등록 완료', description: '새 문의가 고객센터 목록에 등록되었습니다.' });
+    },
+    onError: (err: Error) => toast({ title: '문의 등록 실패', description: err.message, variant: 'destructive' }),
+  });
+}
+
 export function useUpdateInquiry() {
   const queryClient = useQueryClient();
   return useMutation({
