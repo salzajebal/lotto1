@@ -1,5 +1,5 @@
 import { type FormEvent, type ReactNode, useEffect, useRef, useState } from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import {
   ArrowRight,
   BadgeCheck,
@@ -25,17 +25,53 @@ const queryClient = new QueryClient();
 
 type ModalName = 'review' | 'support' | 'auth' | 'membership' | 'video' | null;
 
-const stories = [
-  { rank: '3등', date: '1184회 · 서울 마포', title: '퇴근 후 10분, 처음으로 맞춘 세 자리', amount: '당첨금 1,584,725원' },
-  { rank: '2등', date: '1181회 · 경기 성남', title: '8년 만에 바뀐 번호, 숫자보다 분석을 믿었어요', amount: '당첨금 61,439,872원' },
-  { rank: '3등', date: '1178회 · 부산 수영', title: '아버지와 함께 고른 조합이 해냈습니다', amount: '당첨금 1,742,091원' },
-];
+type PublicReview = {
+  id: number;
+  memberName: string;
+  drawNumber: number;
+  rank: string;
+  amount: number;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+};
 
-const reviews = [
-  { name: '박민서 님', meta: '3등 / 1184회', text: '매주 무작정 사다가 분석 리포트를 먼저 읽는 습관이 생겼어요. 이번에는 정말 숫자가 달라 보였습니다.' },
-  { name: '정우성 님', meta: '2등 / 1181회', text: '당첨 후에도 상담팀에서 차분하게 다음 흐름을 설명해주셔서 더 믿음이 갔습니다. 기록이 남는 서비스예요.' },
-  { name: '김하늘 님', meta: '멤버십 6개월', text: '커뮤니티에서 다른 회원들의 조합을 함께 보며 공부하는 재미가 있습니다. 과장 없이 오래 하는 곳.' },
-];
+type PublicCommunityPost = {
+  id: number;
+  authorName: string;
+  category: string;
+  title: string;
+  content: string;
+  replyCount: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+async function fetchPublicData<T>(url: string): Promise<T> {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error('공개 콘텐츠를 불러오지 못했습니다.');
+  return response.json();
+}
+
+function usePublishedReviews() {
+  return useQuery({
+    queryKey: ['publishedReviews'],
+    queryFn: () => fetchPublicData<PublicReview[]>('/api/reviews'),
+    staleTime: 15_000,
+  });
+}
+
+function usePublishedCommunityPosts() {
+  return useQuery({
+    queryKey: ['publishedCommunityPosts'],
+    queryFn: () => fetchPublicData<PublicCommunityPost[]>('/api/community-posts'),
+    staleTime: 15_000,
+  });
+}
+
+const formatAmount = (amount: number) => amount > 0 ? `당첨금 ${amount.toLocaleString('ko-KR')}원` : '당첨금액 비공개';
+const formatDate = (date: string) => new Intl.DateTimeFormat('ko-KR', { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(date));
+const initials = (name: string) => name.trim().slice(0, 2).toUpperCase() || '회원';
 
 function Modal({
   title,
@@ -68,6 +104,11 @@ function Home() {
   const [submitError, setSubmitError] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
   const revealRoot = useRef<HTMLDivElement>(null);
+  const { data: publishedReviews = [], isLoading: reviewsLoading, isError: reviewsError } = usePublishedReviews();
+  const { data: publishedPosts = [], isLoading: postsLoading, isError: postsError } = usePublishedCommunityPosts();
+  const featuredReviews = publishedReviews.slice(0, 3);
+  const featuredPosts = publishedPosts.slice(0, 3);
+  const recentCommunityMembers = Array.from(new Set(publishedPosts.map((post) => post.authorName))).slice(0, 5);
 
   useEffect(() => {
     const root = revealRoot.current;
@@ -171,30 +212,26 @@ function Home() {
             </div>
 
             <div className="winner-showcase">
-              <button className="winner-card winner-card-person" onClick={() => openModal('video')}>
-                <span className="person-portrait portrait-one" aria-hidden="true"><i /><b /></span>
-                <span className="winner-board"><small>로또 1등 당첨</small><strong>5,000,000,000원</strong></span>
-                <span className="winner-quote">“평생 꿈만 같아요…<br />이제 가족들과 더 행복하게 살 수 있어요”</span>
-                <span className="winner-link"><Play size={14} fill="currentColor" /> 로또 1등 당첨자 인터뷰</span>
-              </button>
-
-              <button className="winner-card winner-card-receipt" onClick={() => openModal('video')}>
-                <span className="receipt-paper">
-                  <small>LOTTO 6/45</small>
-                  <b>1등 당첨</b>
-                  <strong>5,000,000,000원</strong>
-                  <i>03 08 14 23 33 45</i>
-                </span>
-                <span className="winner-quote">“정말 믿기지 않았는데,<br />확인하는 순간 눈물이 났습니다”</span>
-                <span className="winner-link"><Play size={14} fill="currentColor" /> 로또 1등 실제 당첨 영상</span>
-              </button>
-
-              <button className="winner-card winner-card-person" onClick={() => openModal('review')}>
-                <span className="person-portrait portrait-two" aria-hidden="true"><i /><b /></span>
-                <span className="winner-board"><small>로또 1등 당첨</small><strong>10,000,000,000원</strong></span>
-                <span className="winner-quote">“저에게는 인생이 바뀐 순간이었습니다.<br />정말 감사합니다!”</span>
-                <span className="winner-link"><Play size={14} fill="currentColor" /> 로또 1등 당첨자 후기</span>
-              </button>
+              {featuredReviews.map((review, index) => (
+                <button className={`winner-card ${index === 1 ? 'winner-card-receipt' : 'winner-card-person'}`} key={review.id} onClick={() => openModal('review')}>
+                  {index === 1 ? (
+                    <span className="receipt-paper">
+                      <small>LOTTO 6/45</small>
+                      <b>{review.rank} 당첨</b>
+                      <strong>{review.amount > 0 ? `${review.amount.toLocaleString('ko-KR')}원` : '금액 비공개'}</strong>
+                      <i>{review.drawNumber}회</i>
+                    </span>
+                  ) : (
+                    <span className={`person-portrait ${index === 2 ? 'portrait-two' : 'portrait-one'}`} aria-hidden="true"><i /><b /></span>
+                  )}
+                  {index !== 1 && <span className="winner-board"><small>로또 {review.rank} 당첨</small><strong>{review.amount > 0 ? `${review.amount.toLocaleString('ko-KR')}원` : `${review.drawNumber}회`}</strong></span>}
+                  <span className="winner-quote">“{review.content}”</span>
+                  <span className="winner-link"><MessageCircle size={14} /> {review.memberName} 회원의 실제 후기</span>
+                </button>
+              ))}
+              {reviewsLoading && <div className="public-empty winner-empty">공개 후기를 불러오는 중입니다.</div>}
+              {reviewsError && <div className="public-empty public-error winner-empty">공개 후기를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.</div>}
+              {!reviewsLoading && !reviewsError && featuredReviews.length === 0 && <div className="public-empty winner-empty">관리자 검토를 통과한 실제 당첨 후기가 등록되면 이곳에 표시됩니다.</div>}
             </div>
 
             <div className="hero-quick-grid">
@@ -219,9 +256,10 @@ function Home() {
         <div className="ticker">
           <div className="shell ticker-inner">
             <span className="ticker-highlight">LIVE RESULT</span><span className="ticker-sep">/</span>
-            <span>1184회 3등 당첨 회원 6명</span><span className="ticker-sep">•</span>
-            <span>1181회 2등 당첨 회원 1명</span><span className="ticker-sep">•</span>
-            <span>검증 가능한 후기 247건</span><span className="ticker-sep">•</span><span className="ticker-highlight">매주 토요일 업데이트</span>
+            {reviewsError ? <span>공개 당첨 기록을 불러오지 못했습니다.</span> : <>
+              {featuredReviews.map((review) => <span key={review.id}>{review.drawNumber}회 {review.rank} · {review.memberName}<span className="ticker-sep">　•</span></span>)}
+              <span>현재 공개 후기 {publishedReviews.length}건</span><span className="ticker-sep">•</span><span className="ticker-highlight">관리자 검토 후 공개</span>
+            </>}
           </div>
         </div>
 
@@ -231,16 +269,19 @@ function Home() {
               <span className="eyebrow">Winning archive</span>
               <h2 className="section-title">말보다 먼저,<br /><span className="gold">기록</span>을 보여드립니다.</h2>
               <p>누구나 볼 수 있는 당첨 회차, 구매 지역, 당첨 등수. 결과가 쌓일수록 분석의 기준은 더 선명해집니다.</p>
-              <div className="proof-stat"><strong>247</strong><span>회원이 직접 남긴<br />검증 가능한 후기</span></div>
+               <div className="proof-stat"><strong>{publishedReviews.length}</strong><span>회원이 직접 남긴<br />공개 당첨 후기</span></div>
             </div>
             <div className="story-list reveal delay-1">
-              {stories.map((story) => (
-                <article className="story" key={story.date}>
-                  <div className="story-rank">{story.rank}</div>
-                  <div><div className="story-meta">{story.date}</div><h3 className="story-title">{story.title}</h3></div>
-                  <div className="story-amount">{story.amount}</div>
+              {featuredReviews.map((review) => (
+                <article className="story" key={review.id}>
+                  <div className="story-rank">{review.rank}</div>
+                  <div><div className="story-meta">{review.drawNumber}회 · {review.memberName} · {formatDate(review.createdAt)}</div><h3 className="story-title">{review.content}</h3></div>
+                  <div className="story-amount">{formatAmount(review.amount)}</div>
                 </article>
               ))}
+              {reviewsLoading && <div className="public-empty">당첨 기록을 불러오는 중입니다.</div>}
+              {reviewsError && <div className="public-empty public-error">당첨 기록을 불러오지 못했습니다.</div>}
+              {!reviewsLoading && !reviewsError && featuredReviews.length === 0 && <div className="public-empty">현재 공개된 당첨 후기가 없습니다.</div>}
                <Link className="outline-button" style={{ marginTop: 22 }} href="/reviews">후기 더 보기 <ArrowRight size={15} /></Link>
             </div>
           </div>
@@ -250,14 +291,14 @@ function Home() {
           <div className="shell">
             <div className="section-head reveal">
               <div><span className="eyebrow">Winning film</span><h2 className="section-title">그날의 숫자를<br /><span className="gold">직접 들어보세요.</span></h2></div>
-              <p className="section-copy">당첨 회원의 목소리와 실제 구매 영수증. 숫자 뒤에 있는 사람의 이야기를 담았습니다.</p>
+              <p className="section-copy">관리자가 확인한 인터뷰와 증빙 자료가 준비되는 순서대로 공개됩니다.</p>
             </div>
             <button className="video-card reveal delay-1" onClick={() => openModal('video')} aria-label="당첨 회원 인터뷰 영상 재생">
               <div className="video-ghost" />
               <span className="video-play"><Play size={23} fill="currentColor" /></span>
-              <h3>“번호를 받았을 때보다<br />확인했을 때 더 놀랐어요.”</h3>
-              <p>1181회 2등 당첨자 이○○ 회원 인터뷰</p>
-              <span className="video-index">01 / 06</span>
+              <h3>검증된 당첨 회원 인터뷰를<br />준비하고 있습니다.</h3>
+              <p>확인되지 않은 인터뷰나 당첨 정보는 공개하지 않습니다.</p>
+              <span className="video-index">PREPARING</span>
             </button>
           </div>
         </section>
@@ -309,15 +350,21 @@ function Home() {
             </div>
             <div className="community-grid">
               <article className="community-main reveal">
-                <span className="mono gold">OPEN DISCUSSION / 07</span>
-                <h3>이번 주 가장 오래 고민한 숫자는?</h3>
-                <p>회원들이 고른 기준과 조합을 자유롭게 공유하고, 분석팀의 코멘트를 확인하세요.</p>
-                <div className="community-tags"><span>최근 출현 흐름</span><span>나만의 제외수</span><span>당첨 후기</span></div>
+                <span className="mono gold">OPEN DISCUSSION / {String(publishedPosts.length).padStart(2, '0')}</span>
+                {postsLoading ? <div className="public-empty">커뮤니티 게시글을 불러오는 중입니다.</div> : postsError ? <div className="public-empty public-error">커뮤니티 게시글을 불러오지 못했습니다.</div> : featuredPosts[0] ? (
+                  <>
+                    <h3>{featuredPosts[0].title}</h3>
+                    <p>{featuredPosts[0].content}</p>
+                    <div className="community-tags">{featuredPosts.map((post) => <span key={post.id}>{post.category}</span>)}</div>
+                  </>
+                ) : (
+                  <div className="public-empty">승인된 고객 게시글이 등록되면 이곳에 표시됩니다.</div>
+                )}
                 <Link className="outline-button" href="/community">커뮤니티 둘러보기 <ArrowRight size={15} /></Link>
               </article>
               <article className="community-side reveal delay-1">
-                <div className="community-side-top"><div><span className="mono muted">MEMBER LOUNGE</span><h4>지금 함께 보는 회원</h4></div><span className="online">ONLINE 32</span></div>
-                <div><div className="avatars"><span className="avatar">MJ</span><span className="avatar">SY</span><span className="avatar">JK</span><span className="avatar">HN</span><span className="avatar">+28</span></div><small>이번 주 분석을 함께 복기하고 있습니다.</small></div>
+                <div className="community-side-top"><div><span className="mono muted">MEMBER LOUNGE</span><h4>최근 참여 회원</h4></div><span className="online">공개 {publishedPosts.length}</span></div>
+                <div><div className="avatars">{recentCommunityMembers.map((name) => <span className="avatar" key={name}>{initials(name)}</span>)}</div><small>{recentCommunityMembers.length > 0 ? '실제 공개 게시글을 남긴 회원입니다.' : '공개된 참여 기록이 아직 없습니다.'}</small></div>
               </article>
             </div>
           </div>
@@ -325,9 +372,12 @@ function Home() {
 
         <section className="section review-section">
           <div className="shell review-grid">
-            <div className="review-intro reveal"><span className="eyebrow">Member voices</span><h2 className="section-title">실제로 써본<br /><span className="gold">사람들의 말.</span></h2><p>좋은 결과만 골라 보여주지 않습니다. 멤버십을 경험한 분들의 솔직한 기록을 모았습니다.</p><div className="review-score"><span className="score-number">4.8</span><div><div className="stars" aria-label="별점 5점 중 4.8점">★★★★★</div><span className="muted">회원 만족도 / 2024–2025</span></div></div></div>
+            <div className="review-intro reveal"><span className="eyebrow">Member voices</span><h2 className="section-title">실제로 써본<br /><span className="gold">사람들의 말.</span></h2><p>고객이 직접 제출하고 관리자가 검토해 공개한 실제 후기입니다.</p><div className="review-score"><span className="score-number">{publishedReviews.length}</span><div><strong className="gold">공개 후기</strong><span className="muted">검토 완료된 실제 고객 기록</span></div></div></div>
             <div className="review-stream reveal delay-1">
-              {reviews.map((review) => <article className="review-card" key={review.name}><div className="review-top"><span>{review.name}</span><span>{review.meta}</span></div><blockquote>“{review.text}”</blockquote></article>)}
+              {featuredReviews.map((review) => <article className="review-card" key={review.id}><div className="review-top"><span>{review.memberName}</span><span>{review.rank} / {review.drawNumber}회</span></div><blockquote>“{review.content}”</blockquote></article>)}
+              {reviewsLoading && <div className="public-empty">고객 후기를 불러오는 중입니다.</div>}
+              {reviewsError && <div className="public-empty public-error">고객 후기를 불러오지 못했습니다.</div>}
+              {!reviewsLoading && !reviewsError && featuredReviews.length === 0 && <div className="public-empty">현재 공개된 고객 후기가 없습니다.</div>}
               <button className="outline-button" onClick={() => openModal('review')}>나의 후기 작성하기 <MessageCircle size={15} /></button>
             </div>
           </div>
@@ -385,17 +435,10 @@ function Home() {
       {modal === 'support' && <Modal title="고객센터 문의" description="대표번호 대신 카카오톡 채널로 빠르고 정확하게 상담합니다." onClose={() => setModal(null)}>{submitted ? <div className="success-note">문의가 접수되었습니다. 카카오톡 채널에서 답변을 확인해주세요.</div> : <form className="form" onSubmit={submitForm}><label>문의 유형<input name="category" required placeholder="멤버십 / 분석 번호 / 결제 등" /></label><label>연락받을 카카오톡 아이디<input name="contact" required placeholder="카카오톡 채널 상담을 위해 필요합니다" /></label><label>문의 내용<textarea name="message" required placeholder="궁금한 내용을 남겨주세요." /></label>{submitError && <div className="form-error">{submitError}</div>}<button className="gold-button" type="submit" disabled={submitting}>{submitting ? '접수 중...' : '문의 접수하기'} <MessageCircle size={15} /></button></form>}</Modal>}
       {modal === 'auth' && <Modal title={authMode === 'login' ? '다시 만나서 반갑습니다' : '골든 픽 시작하기'} description={authMode === 'login' ? '분석 리포트와 커뮤니티를 이어서 확인하세요.' : '매주 새로운 분석 기록을 가장 먼저 받아보세요.'} onClose={() => setModal(null)}><div className="auth-switch"><button className={authMode === 'login' ? 'active' : ''} onClick={() => setAuthMode('login')}>로그인</button><button className={authMode === 'join' ? 'active' : ''} onClick={() => setAuthMode('join')}>회원가입</button></div>{submitted ? <div className="success-note">{authMode === 'login' ? '로그인 준비가 완료되었습니다. 곧 멤버 공간으로 이동합니다.' : '가입 신청이 접수되었습니다. 카카오톡 채널에서 안내를 확인해주세요.'}</div> : <form className="form" onSubmit={submitForm}>{authMode === 'join' && <label>이름<input required placeholder="이름을 입력하세요" /></label>}<label>이메일<input required type="email" placeholder="name@example.com" /></label><label>비밀번호<input required type="password" placeholder="6자 이상 입력하세요" /></label><button className="gold-button" type="submit">{authMode === 'login' ? '로그인하기' : '회원가입하기'} <ArrowRight size={15} /></button></form>}</Modal>}
       {modal === 'membership' && <Modal title="멤버십 상담 신청" description="신청 내용을 확인한 뒤 카카오톡 채널로 자세한 안내를 드립니다." onClose={() => setModal(null)}>{submitted ? <div className="success-note">상담 신청이 접수되었습니다. 카카오톡 채널에서 곧 안내드리겠습니다.</div> : <form className="form" onSubmit={submitForm}><label>성함<input name="name" required placeholder="상담받으실 성함" /></label><label>카카오톡 아이디<input name="contact" required placeholder="답변받으실 카카오톡 아이디" /></label><label>관심 플랜<input name="category" defaultValue="3등 분석 번호 멤버십 / 330,000원" readOnly /></label><label>상담 메모<textarea name="message" required placeholder="1·2등 상담 등 남기고 싶은 내용을 적어주세요." /></label>{submitError && <div className="form-error">{submitError}</div>}<button className="gold-button" type="submit" disabled={submitting}>{submitting ? '신청 중...' : '상담 신청하기'} <ArrowRight size={15} /></button></form>}</Modal>}
-      {modal === 'video' && <Modal title="당첨 회원 인터뷰" description="실제 회원의 이야기를 담은 골든 픽 인터뷰입니다." onClose={() => setModal(null)}><div style={{ aspectRatio: '16 / 9', display: 'grid', placeItems: 'center', background: 'radial-gradient(circle, #7b571b, #101318 63%)', border: '1px solid #685127' }}><span className="video-play" style={{ position: 'static', transform: 'none' }}><Play size={23} fill="currentColor" /></span></div><p style={{ margin: '18px 0 0' }}>영상 전체 공개를 준비 중입니다. 멤버십에서는 회차별 당첨 인터뷰와 분석팀의 복기 영상을 먼저 확인할 수 있습니다.</p></Modal>}
+      {modal === 'video' && <Modal title="당첨 회원 인터뷰 준비 중" description="관리자가 검증한 회원 인터뷰만 공개합니다." onClose={() => setModal(null)}><div style={{ aspectRatio: '16 / 9', display: 'grid', placeItems: 'center', background: 'radial-gradient(circle, #7b571b, #101318 63%)', border: '1px solid #685127' }}><span className="video-play" style={{ position: 'static', transform: 'none' }}><Play size={23} fill="currentColor" /></span></div><p style={{ margin: '18px 0 0' }}>현재 공개 가능한 검증 자료를 준비하고 있습니다. 확인되지 않은 영상이나 당첨 정보는 표시하지 않습니다.</p></Modal>}
     </div>
   );
 }
-
-const communityPosts = [
-  { tag: '번호 흐름', title: '최근 10회에서 자주 바뀐 구간을 어떻게 보시나요?', meta: '분석팀 코멘트 · 12분 전', replies: '24' },
-  { tag: '나만의 제외수', title: '이번 주에는 이 숫자를 제외해 보려고 합니다', meta: '회원 김○○ · 38분 전', replies: '16' },
-  { tag: '조합 밸런스', title: '홀짝 3:3 조합, 실제로 오래 살아남을까요?', meta: '회원 박○○ · 1시간 전', replies: '31' },
-  { tag: '당첨 후기', title: '1184회 3등 당첨, 분석 리포트에서 도움받은 부분', meta: '회원 이○○ · 어제', replies: '48' },
-];
 
 function PublicPageHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -440,7 +483,57 @@ function PublicPageFooter() {
   );
 }
 
+function CommunitySubmissionForm() {
+  const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  const submitPost = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    setSubmitting(true);
+    setError('');
+    try {
+      const response = await fetch('/api/community-posts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          authorName: String(data.get('authorName') || ''),
+          category: String(data.get('category') || ''),
+          title: String(data.get('title') || ''),
+          content: String(data.get('content') || ''),
+        }),
+      });
+      if (!response.ok) throw new Error('게시글 접수에 실패했습니다. 입력 내용을 확인해주세요.');
+      setSubmitted(true);
+      event.currentTarget.reset();
+    } catch (submissionError) {
+      setError(submissionError instanceof Error ? submissionError.message : '게시글 접수에 실패했습니다.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (submitted) return <div className="success-note">게시글이 접수되었습니다. 관리자 검토 후 커뮤니티에 공개됩니다.</div>;
+
+  return (
+    <form className="form standalone-review-form" onSubmit={submitPost}>
+      <div className="form-two-col">
+        <label>닉네임<input name="authorName" required maxLength={80} placeholder="공개할 이름" /></label>
+        <label>분류<select name="category" defaultValue="번호 흐름"><option>번호 흐름</option><option>나만의 제외수</option><option>조합 밸런스</option><option>당첨 후기</option><option>자유 토론</option></select></label>
+      </div>
+      <label>제목<input name="title" required maxLength={200} placeholder="함께 나누고 싶은 이야기의 제목" /></label>
+      <label>내용<textarea name="content" required maxLength={5000} placeholder="분석 기준이나 경험을 자세히 남겨주세요." /></label>
+      {error && <div className="form-error">{error}</div>}
+      <button className="gold-button" type="submit" disabled={submitting}>{submitting ? '접수 중...' : '게시글 제출하기'} <ArrowRight size={15} /></button>
+    </form>
+  );
+}
+
 function CommunityPage() {
+  const { data: posts = [], isLoading, isError } = usePublishedCommunityPosts();
+  const { data: reviews = [] } = usePublishedReviews();
+  const members = Array.from(new Set(posts.map((post) => post.authorName)));
   return (
     <div className="lotto-app standalone-page">
       <PublicPageHeader />
@@ -455,9 +548,9 @@ function CommunityPage() {
               <Link className="outline-button" href="/reviews">당첨 후기 보기 <ArrowRight size={15} /></Link>
             </div>
             <div className="community-page-stats">
-              <div><strong>32</strong><span>지금 함께 보는 회원</span></div>
-              <div><strong>07</strong><span>이번 주 열린 토론</span></div>
-              <div><strong>247</strong><span>검증 가능한 후기</span></div>
+               <div><strong>{members.length}</strong><span>최근 참여 회원</span></div>
+               <div><strong>{posts.length}</strong><span>공개된 토론</span></div>
+               <div><strong>{reviews.length}</strong><span>공개된 당첨 후기</span></div>
             </div>
           </div>
         </section>
@@ -468,14 +561,23 @@ function CommunityPage() {
               <p className="section-copy">출현 흐름부터 나만의 제외수까지, 각자의 기준을 공유하고 분석팀의 코멘트를 확인하세요.</p>
             </div>
             <div className="community-post-list">
-              {communityPosts.map((post) => (
-                <article className="community-post" key={post.title}>
-                  <div className="community-post-tag">{post.tag}</div>
-                  <div className="community-post-body"><h3>{post.title}</h3><span>{post.meta}</span></div>
-                  <div className="community-post-replies"><MessageCircle size={15} />{post.replies}</div>
+              {posts.map((post) => (
+                <article className="community-post" key={post.id}>
+                  <div className="community-post-tag">{post.category}</div>
+                  <div className="community-post-body"><h3>{post.title}</h3><p>{post.content}</p><span>{post.authorName} · {formatDate(post.createdAt)}</span></div>
+                  <div className="community-post-replies"><MessageCircle size={15} />{post.replyCount}</div>
                   <ArrowRight className="community-post-arrow" size={18} />
                 </article>
               ))}
+              {isLoading && <div className="public-empty">커뮤니티 게시글을 불러오는 중입니다.</div>}
+              {!isLoading && !isError && posts.length === 0 && <div className="public-empty">현재 공개된 고객 게시글이 없습니다. 첫 이야기를 남겨주세요.</div>}
+              {isError && <div className="public-empty public-error">게시글을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.</div>}
+            </div>
+            <div className="community-submit-card">
+              <span className="mono gold">SHARE YOUR STANDARD</span>
+              <h3>나의 분석 기준을<br />함께 나눠주세요.</h3>
+              <p>접수된 글은 관리자 검토 후 커뮤니티에 공개됩니다.</p>
+              <CommunitySubmissionForm />
             </div>
           </div>
         </section>
@@ -487,8 +589,8 @@ function CommunityPage() {
               <p className="section-copy">멤버십 가입 후 커뮤니티에서 회차별 분석 리포트와 회원들의 조합을 함께 확인할 수 있습니다.</p>
             </div>
             <div className="community-lounge-card">
-              <div className="community-side-top"><div><span className="mono muted">ONLINE NOW</span><h4>지금 함께 보는 회원</h4></div><span className="online">ONLINE 32</span></div>
-              <div><div className="avatars"><span className="avatar">MJ</span><span className="avatar">SY</span><span className="avatar">JK</span><span className="avatar">HN</span><span className="avatar">+28</span></div><small>이번 주 분석을 함께 복기하고 있습니다.</small></div>
+               <div className="community-side-top"><div><span className="mono muted">RECENT MEMBERS</span><h4>최근 글을 남긴 회원</h4></div><span className="online">공개 {posts.length}</span></div>
+               <div><div className="avatars">{members.slice(0, 5).map((name) => <span className="avatar" key={name}>{initials(name)}</span>)}</div><small>{members.length > 0 ? `${members.length}명의 실제 회원 기록이 공개되어 있습니다.` : '공개된 참여 기록이 아직 없습니다.'}</small></div>
             </div>
           </div>
         </section>
@@ -550,6 +652,7 @@ function ReviewSubmissionForm() {
 }
 
 function ReviewsPage() {
+  const { data: reviews = [], isLoading, isError } = usePublishedReviews();
   return (
     <div className="lotto-app standalone-page">
       <PublicPageHeader />
@@ -559,7 +662,7 @@ function ReviewsPage() {
             <span className="eyebrow">Member voices</span>
             <h1 className="standalone-title">실제로 써본<br /><span className="gold">사람들의 말.</span></h1>
             <p className="standalone-lede">좋은 결과만 골라 보여주지 않습니다. 멤버십을 경험한 분들의 솔직한 기록을 모았습니다.</p>
-            <div className="review-page-score"><strong>4.8</strong><div><div className="stars" aria-label="별점 5점 중 4.8점">★★★★★</div><span>회원 만족도 / 2024–2025</span></div></div>
+            <div className="review-page-score"><strong>{reviews.length}</strong><div><strong className="gold">공개 후기</strong><span>관리자 검토를 완료한 실제 고객 기록</span></div></div>
           </div>
         </section>
         <section className="section page-section">
@@ -570,7 +673,10 @@ function ReviewsPage() {
             </div>
             <div className="review-page-grid">
               <div className="review-page-stream">
-                {reviews.map((review) => <article className="review-card review-page-card" key={review.name}><div className="review-top"><span>{review.name}</span><span>{review.meta}</span></div><blockquote>“{review.text}”</blockquote></article>)}
+                {reviews.map((review) => <article className="review-card review-page-card" key={review.id}><div className="review-top"><span>{review.memberName}</span><span>{review.rank} / {review.drawNumber}회</span></div><blockquote>“{review.content}”</blockquote><strong>{formatAmount(review.amount)}</strong></article>)}
+                {isLoading && <div className="public-empty">고객 후기를 불러오는 중입니다.</div>}
+                {!isLoading && !isError && reviews.length === 0 && <div className="public-empty">현재 공개된 고객 후기가 없습니다. 첫 후기를 남겨주세요.</div>}
+                {isError && <div className="public-empty public-error">후기를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.</div>}
               </div>
               <div className="review-submit-card">
                 <span className="mono gold">SHARE YOUR STORY</span>
@@ -584,7 +690,7 @@ function ReviewsPage() {
         <section className="section review-archive-section">
           <div className="shell">
             <div className="section-head"><div><span className="eyebrow">Winning archive</span><h2 className="section-title">회차별 당첨<br /><span className="gold">기록을 확인하세요.</span></h2></div><Link className="outline-button" href="/community">커뮤니티 보기 <ArrowRight size={15} /></Link></div>
-            <div className="review-story-grid">{stories.map((story) => <article className="review-story-card" key={story.date}><span className="story-rank">{story.rank}</span><div><span className="story-meta">{story.date}</span><h3>{story.title}</h3></div><strong>{story.amount}</strong></article>)}</div>
+            <div className="review-story-grid">{reviews.map((review) => <article className="review-story-card" key={review.id}><span className="story-rank">{review.rank}</span><div><span className="story-meta">{review.drawNumber}회 · {review.memberName} · {formatDate(review.createdAt)}</span><h3>{review.content}</h3></div><strong>{formatAmount(review.amount)}</strong></article>)}</div>
           </div>
         </section>
       </main>

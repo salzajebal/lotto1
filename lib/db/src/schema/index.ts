@@ -114,6 +114,17 @@ export const winningReviewsTable = pgTable("winning_reviews", {
   ...timestamps,
 });
 
+export const communityPostsTable = pgTable("community_posts", {
+  id: serial("id").primaryKey(),
+  authorName: text("author_name").notNull(),
+  category: text("category").notNull().default("자유 토론"),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  replyCount: integer("reply_count").notNull().default(0),
+  status: text("status").notNull().default("pending"),
+  ...timestamps,
+});
+
 export const auditEventsTable = pgTable("audit_events", {
   id: serial("id").primaryKey(),
   adminId: integer("admin_id").references(() => adminUsersTable.id, { onDelete: "set null" }),
@@ -130,3 +141,4 @@ export type MemberGrade = typeof memberGradesTable.$inferSelect;
 export type AnalysisDatabase = typeof analysisDatabasesTable.$inferSelect;
 export type SupportInquiry = typeof supportInquiriesTable.$inferSelect;
 export type WinningReview = typeof winningReviewsTable.$inferSelect;
+export type CommunityPost = typeof communityPostsTable.$inferSelect;

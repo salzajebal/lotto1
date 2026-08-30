@@ -1,13 +1,14 @@
 import { useState } from 'react';
-import { useReviews, useCreateReview, useUpdateReview } from '../api';
-import { Card, Table, Th, Td, Badge, Button, Input, Select, Modal, Label, Textarea } from '../components/UI';
-import { Plus, Edit2, Loader2 } from 'lucide-react';
+import { useReviews, useCreateReview, useUpdateReview, useDeleteReview } from '../api';
+import { Table, Th, Td, Badge, Button, Input, Select, Modal, Label, Textarea } from '../components/UI';
+import { Plus, Edit2, Loader2, Trash2 } from 'lucide-react';
 
 export default function ReviewsView() {
   const { data: reviews, isLoading } = useReviews();
   
   const createReview = useCreateReview();
   const updateReview = useUpdateReview();
+  const deleteReview = useDeleteReview();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -42,6 +43,11 @@ export default function ReviewsView() {
     } else {
       createReview.mutate(payload, { onSuccess: () => setModalOpen(false) });
     }
+  };
+
+  const handleDelete = (review: any) => {
+    if (!window.confirm(`‘${review.memberName}’님의 후기를 삭제하시겠습니까? 삭제 후 복구할 수 없습니다.`)) return;
+    deleteReview.mutate(review.id);
   };
 
   const getStatusBadge = (status: string) => {
@@ -90,7 +96,10 @@ export default function ReviewsView() {
                 <Td>{getStatusBadge(r.status)}</Td>
                 <Td><span className="text-[var(--ad-muted)]">{new Date(r.createdAt).toLocaleDateString()}</span></Td>
                 <Td className="text-right">
-                  <Button variant="ghost" size="sm" onClick={() => openModal(r)}><Edit2 size={14} /></Button>
+                  <div className="flex justify-end gap-1">
+                    <Button variant="ghost" size="sm" aria-label="후기 수정" onClick={() => openModal(r)}><Edit2 size={14} /></Button>
+                    <Button variant="ghost" size="sm" aria-label="후기 삭제" disabled={deleteReview.isPending} onClick={() => handleDelete(r)}><Trash2 size={14} /></Button>
+                  </div>
                 </Td>
               </tr>
             ))}

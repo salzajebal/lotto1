@@ -213,7 +213,11 @@ export function useCreateReview() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: any) => fetcher(`${API_BASE}/reviews`, { method: 'POST', body: JSON.stringify(data) }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['adminReviews'] })
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminReviews'] });
+      queryClient.invalidateQueries({ queryKey: ['publishedReviews'] });
+      queryClient.invalidateQueries({ queryKey: ['adminDashboard'] });
+    }
   });
 }
 
@@ -221,7 +225,66 @@ export function useUpdateReview() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: number, data: any }) => fetcher(`${API_BASE}/reviews/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['adminReviews'] })
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminReviews'] });
+      queryClient.invalidateQueries({ queryKey: ['publishedReviews'] });
+      queryClient.invalidateQueries({ queryKey: ['adminDashboard'] });
+    }
+  });
+}
+
+export function useDeleteReview() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: (id: number) => fetcher(`${API_BASE}/reviews/${id}`, { method: 'DELETE' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminReviews'] });
+      queryClient.invalidateQueries({ queryKey: ['publishedReviews'] });
+      queryClient.invalidateQueries({ queryKey: ['adminDashboard'] });
+      toast({ title: '후기 삭제 완료', description: '선택한 후기가 삭제되었습니다.' });
+    },
+    onError: (err: Error) => toast({ title: '후기 삭제 실패', description: err.message, variant: 'destructive' }),
+  });
+}
+
+export function useCommunityPosts() {
+  return useQuery({ queryKey: ['adminCommunityPosts'], queryFn: () => fetcher(`${API_BASE}/community-posts`) });
+}
+
+export function useCreateCommunityPost() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: any) => fetcher(`${API_BASE}/community-posts`, { method: 'POST', body: JSON.stringify(data) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminCommunityPosts'] });
+      queryClient.invalidateQueries({ queryKey: ['publishedCommunityPosts'] });
+    },
+  });
+}
+
+export function useUpdateCommunityPost() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number, data: any }) => fetcher(`${API_BASE}/community-posts/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminCommunityPosts'] });
+      queryClient.invalidateQueries({ queryKey: ['publishedCommunityPosts'] });
+    },
+  });
+}
+
+export function useDeleteCommunityPost() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: (id: number) => fetcher(`${API_BASE}/community-posts/${id}`, { method: 'DELETE' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminCommunityPosts'] });
+      queryClient.invalidateQueries({ queryKey: ['publishedCommunityPosts'] });
+      toast({ title: '게시글 삭제 완료', description: '선택한 게시글이 삭제되었습니다.' });
+    },
+    onError: (err: Error) => toast({ title: '게시글 삭제 실패', description: err.message, variant: 'destructive' }),
   });
 }
 

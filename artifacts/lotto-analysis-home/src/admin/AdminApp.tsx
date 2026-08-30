@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import './admin.css';
 import { useAdminAuth, useAdminLogin, useAdminBootstrap, useAdminLogout } from './api';
 import { Card, Input, Button, Label } from './components/UI';
-import { LayoutDashboard, Users, Database, MessagesSquare, ShieldHalf, Award, Star, BarChart3, LogOut, Loader2, Settings } from 'lucide-react';
+import { LayoutDashboard, Users, Database, MessagesSquare, ShieldHalf, Award, Star, BarChart3, LogOut, Loader2, Settings, MessageCircle } from 'lucide-react';
 import DashboardView from './views/DashboardView';
 import MembersView from './views/MembersView';
 import DatabasesView from './views/DatabasesView';
@@ -12,6 +12,7 @@ import GradesView from './views/GradesView';
 import ReviewsView from './views/ReviewsView';
 import StatsView from './views/StatsView';
 import SettingsView from './views/SettingsView';
+import CommunityView from './views/CommunityView';
 
 function AuthScreen({ needsBootstrap }: { needsBootstrap: boolean }) {
   const [name, setName] = useState('');
@@ -69,7 +70,7 @@ function AuthScreen({ needsBootstrap }: { needsBootstrap: boolean }) {
   );
 }
 
-type ViewType = 'dashboard' | 'members' | 'databases' | 'inquiries' | 'staff' | 'grades' | 'reviews' | 'stats' | 'settings';
+type ViewType = 'dashboard' | 'members' | 'databases' | 'inquiries' | 'staff' | 'grades' | 'reviews' | 'community' | 'stats' | 'settings';
 
 function AdminLayout({ user }: { user: any }) {
   const [activeView, setActiveView] = useState<ViewType>('dashboard');
@@ -81,6 +82,7 @@ function AdminLayout({ user }: { user: any }) {
     { id: 'databases', label: '분석 DB', icon: Database },
     { id: 'inquiries', label: '고객센터', icon: MessagesSquare },
     { id: 'reviews', label: '당첨 후기', icon: Star, ownerOnly: true },
+    { id: 'community', label: '커뮤니티', icon: MessageCircle, ownerOnly: true },
     { id: 'stats', label: '통계', icon: BarChart3, ownerOnly: true },
     { id: 'grades', label: '회원 등급', icon: Award },
     { id: 'staff', label: '직원 관리', icon: ShieldHalf, ownerOnly: true },
@@ -142,6 +144,7 @@ function AdminLayout({ user }: { user: any }) {
           {activeView === 'databases' && <DatabasesView user={user} />}
           {activeView === 'inquiries' && <InquiriesView user={user} />}
           {activeView === 'reviews' && <ReviewsView />}
+          {activeView === 'community' && <CommunityView />}
           {activeView === 'stats' && <StatsView />}
           {activeView === 'grades' && <GradesView user={user} />}
           {activeView === 'staff' && <StaffView user={user} />}

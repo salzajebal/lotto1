@@ -8,6 +8,7 @@ import {
   adminUsersTable,
   analysisDatabasesTable,
   auditEventsTable,
+  communityPostsTable,
   consultationNotesTable,
   db,
   dbAssignmentsTable,
@@ -670,7 +671,7 @@ router.post("/admin/inquiries/:id/notes", async (req, res): Promise<void> => {
   res.status(201).json(note);
 });
 
-router.get("/admin/reviews", async (_req, res): Promise<void> => {
+router.get("/admin/reviews", requireOwner, async (_req, res): Promise<void> => {
   res.json(await db.select().from(winningReviewsTable).orderBy(desc(winningReviewsTable.createdAt)));
 });
 
@@ -692,8 +693,12 @@ router.post("/admin/reviews", requireOwner, async (req, res): Promise<void> => {
 router.patch("/admin/reviews/:id", requireOwner, async (req, res): Promise<void> => {
   const id = int(req.params.id);
   const body = parse(z.object({
-    status: z.string().optional(),
+    memberName: z.string().trim().min(1).max(80).optional(),
+    drawNumber: z.number().int().min(1).max(9999).optional(),
+    rank: z.enum(["1등", "2등", "3등", "4등", "5등"]).optional(),
+    amount: z.number().int().min(0).max(100000000000).optional(),
     content: z.string().trim().min(1).optional(),
+    status: z.enum(["pending", "published", "rejected"]).optional(),
   }), req.body, res);
   if (!body) return;
   const [review] = await db.update(winningReviewsTable).set({ ...body, updatedAt: new Date() }).where(eq(winningReviewsTable.id, id)).returning();
@@ -703,6 +708,67 @@ router.patch("/admin/reviews/:id", requireOwner, async (req, res): Promise<void>
   }
   await recordEvent(req, "update", "review", id);
   res.json(review);
+});
+
+router.delete("/admin/reviews/:id", requireOwner, async (req, res): Promise<void> => {
+  const id = int(req.params.id);
+  const [review] = await db.delete(winningReviewsTable).where(eq(winningReviewsTable.id, id)).returning();
+  if (!review) {
+    res.status(404).json({ error: "후기를 찾을 수 없습니다." });
+    return;
+  }
+  await recordEvent(req, "delete", "review", id, review.memberName);
+  res.json({ ok: true });
+});
+
+router.get("/admin/community-posts", requireOwner, async (_req, res): Promise<void> => {
+  res.json(await db.select().from(communityPostsTable).orderBy(desc(communityPostsTable.createdAt)));
+});
+
+router.post("/admin/community-posts", requireOwner, async (req, res): Promise<void> => {
+  const body = parse(z.object({
+    authorName: z.string().trim().min(1).max(80),
+    category: z.string().trim().min(1).max(50),
+    title: z.string().trim().min(1).max(200),
+    content: z.string().trim().min(1).max(5000),
+    replyCount: z.number().int().nonnegative().default(0),
+    status: z.enum(["pending", "published", "rejected"]).default("pending"),
+  }), req.body, res);
+  if (!body) return;
+  const [post] = await db.insert(communityPostsTable).values(body).returning();
+  await recordEvent(req, "create", "community_post", post.id, post.title);
+  res.status(201).json(post);
+});
+
+router.patch("/admin/community-posts/:id", requireOwner, async (req, res): Promise<void> => {
+  const id = int(req.params.id);
+  const body = parse(z.object({
+    authorName: z.string().trim().min(1).max(80).optional(),
+    category: z.string().trim().min(1).max(50).optional(),
+    title: z.string().trim().min(1).max(200).optional(),
+    content: z.string().trim().min(1).max(5000).optional(),
+    replyCount: z.number().int().nonnegative().optional(),
+    status: z.enum(["pending", "published", "rejected"]).optional(),
+  }), req.body, res);
+  if (!body) return;
+  const [post] = await db.update(communityPostsTable).set({ ...body, updatedAt: new Date() }).where(eq(communityPostsTable.id, id)).returning();
+  if (!post) {
+    res.status(404).json({ error: "게시글을 찾을 수 없습니다." });
+    return;
+  }
+  await recordEvent(req, "update", "community_post", id);
+  res.json(post);
+});
+
+router.delete("/admin/community-posts/:id", requireOwner, async (req, res): Promise<void> => {
+  const id = int(req.params.id);
+  const [post] = await db.delete(communityPostsTable).where(eq(communityPostsTable.id, id)).returning();
+  if (!post) {
+    res.status(404).json({ error: "게시글을 찾을 수 없습니다." });
+    return;
+  }
+  await recordEvent(req, "delete", "community_post", id, post.title);
+  res.json({ ok: true });
 });
 
 router.get("/admin/stats", requireOwner, async (_req, res): Promise<void> => {
@@ -741,6 +807,52 @@ router.post("/reviews", publicWriteRateLimit, async (req, res): Promise<void> =>
   if (!body) return;
   const [review] = await db.insert(winningReviewsTable).values({ ...body, status: "pending" }).returning();
   res.status(201).json({ id: review.id, message: "후기가 접수되었습니다." });
+});
+
+router.get("/reviews", async (_req, res): Promise<void> => {
+  const reviews = await db.select({
+    id: winningReviewsTable.id,
+    memberName: winningReviewsTable.memberName,
+    drawNumber: winningReviewsTable.drawNumber,
+    rank: winningReviewsTable.rank,
+    amount: winningReviewsTable.amount,
+    content: winningReviewsTable.content,
+    createdAt: winningReviewsTable.createdAt,
+    updatedAt: winningReviewsTable.updatedAt,
+  }).from(winningReviewsTable)
+    .where(eq(winningReviewsTable.status, "published"))
+    .orderBy(desc(winningReviewsTable.createdAt))
+    .limit(50);
+  res.json(reviews);
+});
+
+router.post("/community-posts", publicWriteRateLimit, async (req, res): Promise<void> => {
+  const body = parse(z.object({
+    authorName: z.string().trim().min(1).max(80),
+    category: z.string().trim().min(1).max(50),
+    title: z.string().trim().min(1).max(200),
+    content: z.string().trim().min(1).max(5000),
+  }), req.body, res);
+  if (!body) return;
+  const [post] = await db.insert(communityPostsTable).values({ ...body, status: "pending" }).returning();
+  res.status(201).json({ id: post.id, message: "게시글이 접수되었습니다." });
+});
+
+router.get("/community-posts", async (_req, res): Promise<void> => {
+  const posts = await db.select({
+    id: communityPostsTable.id,
+    authorName: communityPostsTable.authorName,
+    category: communityPostsTable.category,
+    title: communityPostsTable.title,
+    content: communityPostsTable.content,
+    replyCount: communityPostsTable.replyCount,
+    createdAt: communityPostsTable.createdAt,
+    updatedAt: communityPostsTable.updatedAt,
+  }).from(communityPostsTable)
+    .where(eq(communityPostsTable.status, "published"))
+    .orderBy(desc(communityPostsTable.createdAt))
+    .limit(50);
+  res.json(posts);
 });
 
 export default router;
