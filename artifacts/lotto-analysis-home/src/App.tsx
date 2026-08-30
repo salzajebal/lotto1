@@ -2,13 +2,10 @@ import { type FormEvent, type ReactNode, useEffect, useRef, useState } from 'rea
 import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 import {
   ArrowRight,
-  BadgeCheck,
   Check,
   Headphones,
-  Landmark,
   Menu,
   MessageCircle,
-  Trophy,
   Play,
   X,
 } from 'lucide-react';
@@ -19,6 +16,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
 import { Link, Route, Switch, useLocation, Router as WouterRouter } from 'wouter';
 import AdminApp from '@/admin/AdminApp';
+import { PortalHome } from '@/components/PortalHome';
 
 const queryClient = new QueryClient();
 const customerSatisfactionBadge = `${import.meta.env.BASE_URL}customer-satisfaction-no-bg.png`;
@@ -138,37 +136,6 @@ function KakaoButtonLabel() {
   return <>{data?.kakaoButtonLabel ?? '카카오톡 채널 상담'}</>;
 }
 
-function TrustBadgeGroup({ duplicate = false }: { duplicate?: boolean }) {
-  return (
-    <div className="trust-marquee-group" aria-hidden={duplicate}>
-      <div className="badge badge-satisfaction">
-        <div className="badge-content">
-          <img src={customerSatisfactionBadge} alt="한국고객만족도 1위" />
-          <span>한국고객만족도 1위</span>
-        </div>
-      </div>
-      <div className="badge">
-        <div className="badge-content">
-          <div className="badge-mark" aria-hidden="true"><Trophy size={21} strokeWidth={1.7} /></div>
-          <strong>고객 만족</strong><span>서비스 품질 관리</span>
-        </div>
-      </div>
-      <div className="badge">
-        <div className="badge-content">
-          <div className="badge-mark" aria-hidden="true"><BadgeCheck size={21} strokeWidth={1.7} /></div>
-          <strong>소비자 보호</strong><span>투명한 상담 운영</span>
-        </div>
-      </div>
-      <div className="badge">
-        <div className="badge-content">
-          <div className="badge-mark" aria-hidden="true"><Landmark size={21} strokeWidth={1.7} /></div>
-          <strong>지식재산 관리</strong><span>분석 방법론 연구</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function Home() {
   const [modal, setModal] = useState<ModalName>(null);
   const [authMode, setAuthMode] = useState<'login' | 'join'>('login');
@@ -180,8 +147,6 @@ function Home() {
   const { data: publishedReviews = [], isLoading: reviewsLoading, isError: reviewsError } = usePublishedReviews();
   const { data: publishedPosts = [], isLoading: postsLoading, isError: postsError } = usePublishedCommunityPosts();
   const featuredReviews = publishedReviews.slice(0, 3);
-  const featuredPosts = publishedPosts.slice(0, 3);
-  const recentCommunityMembers = Array.from(new Set(publishedPosts.map((post) => post.authorName))).slice(0, 5);
 
   useEffect(() => {
     const root = revealRoot.current;
@@ -326,163 +291,18 @@ function Home() {
           </div>
         </section>
 
-        <div className="ticker">
-          <div className="shell ticker-inner">
-            <span className="ticker-highlight">LIVE RESULT</span><span className="ticker-sep">/</span>
-            {reviewsError ? <span>공개 당첨 기록을 불러오지 못했습니다.</span> : <>
-              {featuredReviews.map((review) => <span key={review.id}>{review.drawNumber}회 {review.rank} · {review.memberName}<span className="ticker-sep">　•</span></span>)}
-              <span>현재 공개 후기 {publishedReviews.length}건</span><span className="ticker-sep">•</span><span className="ticker-highlight">관리자 검토 후 공개</span>
-            </>}
-          </div>
-        </div>
-
-        <section className="section proof-section" id="proof">
-          <div className="shell proof-grid">
-            <div className="proof-lede reveal">
-              <span className="eyebrow">Winning archive</span>
-              <h2 className="section-title">말보다 먼저,<br /><span className="gold">기록</span>을 보여드립니다.</h2>
-              <p>누구나 볼 수 있는 당첨 회차, 구매 지역, 당첨 등수. 결과가 쌓일수록 분석의 기준은 더 선명해집니다.</p>
-               <div className="proof-stat"><strong>{publishedReviews.length}</strong><span>회원이 직접 남긴<br />공개 당첨 후기</span></div>
-            </div>
-            <div className="story-list reveal delay-1">
-              {featuredReviews.map((review) => (
-                <article className="story" key={review.id}>
-                  <div className="story-rank">{review.rank}</div>
-                  <div><div className="story-meta">{review.drawNumber}회 · {review.memberName} · {formatDate(review.createdAt)}</div><h3 className="story-title">{review.content}</h3></div>
-                  <div className="story-amount">{formatAmount(review.amount)}</div>
-                </article>
-              ))}
-              {reviewsLoading && <div className="public-empty">당첨 기록을 불러오는 중입니다.</div>}
-              {reviewsError && <div className="public-empty public-error">당첨 기록을 불러오지 못했습니다.</div>}
-              {!reviewsLoading && !reviewsError && featuredReviews.length === 0 && <div className="public-empty">현재 공개된 당첨 후기가 없습니다.</div>}
-               <Link className="outline-button" style={{ marginTop: 22 }} href="/reviews">후기 더 보기 <ArrowRight size={15} /></Link>
-            </div>
-          </div>
-        </section>
-
-        <section className="section video-section" id="video">
-          <div className="shell">
-            <div className="section-head reveal">
-              <div><span className="eyebrow">Winning film</span><h2 className="section-title">그날의 숫자를<br /><span className="gold">직접 들어보세요.</span></h2></div>
-              <p className="section-copy">관리자가 확인한 인터뷰와 증빙 자료가 준비되는 순서대로 공개됩니다.</p>
-            </div>
-            <button className="video-card reveal delay-1" onClick={() => openModal('video')} aria-label="당첨 회원 인터뷰 영상 재생">
-              <div className="video-ghost" />
-              <span className="video-play"><Play size={23} fill="currentColor" /></span>
-              <h3>검증된 당첨 회원 인터뷰를<br />준비하고 있습니다.</h3>
-              <p>확인되지 않은 인터뷰나 당첨 정보는 공개하지 않습니다.</p>
-              <span className="video-index">PREPARING</span>
-            </button>
-          </div>
-        </section>
-
-        <section className="section method-section">
-          <div className="shell">
-            <div className="section-head reveal">
-              <div><span className="eyebrow">Our method</span><h2 className="section-title">감이 아니라<br /><span className="gold">세 가지 기준</span>으로.</h2></div>
-              <p className="section-copy">한 번의 행운을 약속하지 않습니다. 매주 같은 기준으로 숫자를 읽고, 결과를 투명하게 남깁니다.</p>
-            </div>
-            <div className="method-grid reveal delay-1">
-              <article className="method-item"><span className="method-no">01 — DATA</span><h3>당첨 데이터 분석</h3><p>최근 10년간의 회차별 출현 빈도와 간격을 비교합니다.</p></article>
-              <article className="method-item"><span className="method-no">02 — BALANCE</span><h3>조합 밸런스</h3><p>구간, 홀짝, 합계의 균형을 맞춰 오래 살아남는 조합을 설계합니다.</p></article>
-              <article className="method-item"><span className="method-no">03 — REVIEW</span><h3>결과와 복기</h3><p>적중과 미적중 모두 숨기지 않고 다음 회차 분석에 반영합니다.</p></article>
-            </div>
-          </div>
-        </section>
-
-        <section className="section membership-section" id="membership">
-          <div className="shell membership-grid">
-            <div className="membership-intro reveal">
-              <span className="eyebrow">Membership</span>
-              <h2 className="section-title">이번 주 숫자를<br /><span className="gold">혼자 고르지 않도록.</span></h2>
-              <p>매주 업데이트되는 분석 번호와 리포트, 그리고 결과를 함께 복기하는 멤버십입니다. 필요한 만큼만, 명확하게 시작하세요.</p>
-              <button className="gold-button" onClick={() => openModal('membership')}>멤버십 상담 시작 <ArrowRight size={16} /></button>
-            </div>
-            <div className="price-card reveal delay-1">
-              <span className="popular">MOST CHOSEN</span>
-              <div className="price-label">GOLDEN PICK / STANDARD</div>
-              <h3>3등 분석 번호 멤버십</h3>
-              <div className="price"><strong>330,000</strong><span>원 / 1개월</span></div>
-              <ul className="feature-list">
-                <li><Check size={15} /> 매주 핵심 분석 번호 제공</li>
-                <li><Check size={15} /> 회차별 분석 리포트 열람</li>
-                <li><Check size={15} /> 멤버 전용 커뮤니티 입장</li>
-                <li><Check size={15} /> 당첨 결과 복기 및 상담</li>
-              </ul>
-              <button className="gold-button" onClick={() => openModal('membership')}>이 플랜으로 상담하기 <ArrowRight size={16} /></button>
-              <div className="consult-box"><div><strong>1·2등 분석은 별도 상담</strong>회원님의 목표에 맞춰 안내해드립니다.</div><KakaoChannelAction /></div>
-            </div>
-          </div>
-        </section>
-
-        <section className="section community-section" id="community">
-          <div className="shell">
-            <div className="section-head reveal">
-              <div><span className="eyebrow">Inside the circle</span><h2 className="section-title">숫자를 나누면,<br /><span className="gold">기준이 생깁니다.</span></h2></div>
-              <p className="section-copy">혼자 결과를 기다리는 대신, 함께 기록하고 서로의 기준을 확인하는 멤버 전용 공간.</p>
-            </div>
-            <div className="community-grid">
-              <article className="community-main reveal">
-                <span className="mono gold">OPEN DISCUSSION / {String(publishedPosts.length).padStart(2, '0')}</span>
-                {postsLoading ? <div className="public-empty">커뮤니티 게시글을 불러오는 중입니다.</div> : postsError ? <div className="public-empty public-error">커뮤니티 게시글을 불러오지 못했습니다.</div> : featuredPosts[0] ? (
-                  <>
-                    <h3>{featuredPosts[0].title}</h3>
-                    <p>{featuredPosts[0].content}</p>
-                    <div className="community-tags">{featuredPosts.map((post) => <span key={post.id}>{post.category}</span>)}</div>
-                  </>
-                ) : (
-                  <div className="public-empty">승인된 고객 게시글이 등록되면 이곳에 표시됩니다.</div>
-                )}
-                <Link className="outline-button" href="/community">커뮤니티 둘러보기 <ArrowRight size={15} /></Link>
-              </article>
-              <article className="community-side reveal delay-1">
-                <div className="community-side-top"><div><span className="mono muted">MEMBER LOUNGE</span><h4>최근 참여 회원</h4></div><span className="online">공개 {publishedPosts.length}</span></div>
-                <div><div className="avatars">{recentCommunityMembers.map((name) => <span className="avatar" key={name}>{initials(name)}</span>)}</div><small>{recentCommunityMembers.length > 0 ? '실제 공개 게시글을 남긴 회원입니다.' : '공개된 참여 기록이 아직 없습니다.'}</small></div>
-              </article>
-            </div>
-          </div>
-        </section>
-
-        <section className="section review-section">
-          <div className="shell review-grid">
-            <div className="review-intro reveal"><span className="eyebrow">Member voices</span><h2 className="section-title">실제로 써본<br /><span className="gold">사람들의 말.</span></h2><p>고객이 직접 제출하고 관리자가 검토해 공개한 실제 후기입니다.</p><div className="review-score"><span className="score-number">{publishedReviews.length}</span><div><strong className="gold">공개 후기</strong><span className="muted">검토 완료된 실제 고객 기록</span></div></div></div>
-            <div className="review-stream reveal delay-1">
-              {featuredReviews.map((review) => <article className="review-card" key={review.id}><div className="review-top"><span>{review.memberName}</span><span>{review.rank} / {review.drawNumber}회</span></div><blockquote>“{review.content}”</blockquote></article>)}
-              {reviewsLoading && <div className="public-empty">고객 후기를 불러오는 중입니다.</div>}
-              {reviewsError && <div className="public-empty public-error">고객 후기를 불러오지 못했습니다.</div>}
-              {!reviewsLoading && !reviewsError && featuredReviews.length === 0 && <div className="public-empty">현재 공개된 고객 후기가 없습니다.</div>}
-              <button className="outline-button" onClick={() => openModal('review')}>나의 후기 작성하기 <MessageCircle size={15} /></button>
-            </div>
-          </div>
-        </section>
-
-        <section className="section trust-section" id="support">
-          <div className="shell">
-            <div className="trust-intro reveal"><div><span className="eyebrow">Trust, not noise</span><h2 className="section-title">확인할 수 있는<br /><span className="gold">신뢰의 표식.</span></h2></div></div>
-            <div className="trust-marquee reveal delay-1" role="region" aria-label="신뢰 배지">
-              <div className="trust-marquee-track">
-                <TrustBadgeGroup />
-                <TrustBadgeGroup duplicate />
-              </div>
-            </div>
-            <div className="support-strip reveal delay-2" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20, marginTop: 52, padding: '28px 0 0', borderTop: '1px solid #30343a' }}>
-              <div><span className="eyebrow">Customer care</span><h3 style={{ margin: '12px 0 0', font: '700 22px Manrope', letterSpacing: '-.05em' }}>궁금한 점은 카카오톡으로 편하게 물어보세요.</h3></div>
-              <KakaoChannelAction className="gold-button" icon={<Headphones size={16} />}><KakaoButtonLabel /></KakaoChannelAction>
-            </div>
-          </div>
-        </section>
+        <PortalHome
+          reviews={publishedReviews}
+          posts={publishedPosts}
+          reviewsLoading={reviewsLoading}
+          reviewsError={reviewsError}
+          postsLoading={postsLoading}
+          postsError={postsError}
+          onModal={openModal}
+          renderKakao={(className) => <KakaoChannelAction className={className}><KakaoButtonLabel /></KakaoChannelAction>}
+          badgeSrc={customerSatisfactionBadge}
+        />
       </main>
-
-      <footer className="footer">
-        <div className="shell">
-          <div className="footer-top">
-            <a className="brand" href="#top"><span className="brand-mark" /><span className="brand-text">GOLDEN PICK<small>LOTTO ANALYSIS LAB</small></span></a>
-             <div className="footer-nav"><div><strong>EXPLORE</strong><Link href="/reviews">당첨 후기</Link><a href="#video">당첨 영상</a><Link href="/community">커뮤니티</Link></div><div><strong>HELP</strong><a href="#membership">멤버십</a><button style={{ display: 'block', padding: 0, marginBottom: 10, border: 0, background: 'transparent', color: '#777e87', fontSize: 12 }} onClick={() => openModal('support')}>고객센터</button><button style={{ display: 'block', padding: 0, border: 0, background: 'transparent', color: '#777e87', fontSize: 12 }} onClick={() => openModal('auth')}>로그인</button></div></div>
-            <div className="footer-call"><strong>카카오톡 채널 상담</strong><span>대표번호 없이, 카카오톡으로만 상담합니다.</span><KakaoChannelAction className="gold footer-kakao-link" icon={<ArrowRight size={12} />}><KakaoButtonLabel /></KakaoChannelAction></div>
-          </div>
-          <div className="footer-bottom"><span>© 2025 GOLDEN PICK. ALL RIGHTS RESERVED.</span><span>이용약관　개인정보처리방침</span></div>
-        </div>
-      </footer>
 
       {modal === 'review' && <Modal title="당첨 후기를 남겨주세요" description="회원님의 기록이 다음 사람에게는 가장 현실적인 기준이 됩니다." onClose={() => setModal(null)}>{submitted ? <div className="success-note">후기가 접수되었습니다. 검토 후 당첨 아카이브에 반영됩니다.</div> : <form className="form" onSubmit={submitForm}><label>닉네임<input name="memberName" required placeholder="공개할 이름을 입력하세요" /></label><label>당첨 회차<input name="drawAndRank" required placeholder="예: 1184회 / 3등" /></label><label>후기<textarea name="content" required placeholder="분석을 시작한 계기와 경험을 들려주세요." /></label>{submitError && <div className="form-error">{submitError}</div>}<button className="gold-button" type="submit" disabled={submitting}>{submitting ? '접수 중...' : '후기 제출하기'} <ArrowRight size={15} /></button></form>}</Modal>}
       {modal === 'support' && <Modal title="고객센터 문의" description="대표번호 대신 카카오톡 채널로 빠르고 정확하게 상담합니다." onClose={() => setModal(null)}>{submitted ? <div className="success-note">문의가 접수되었습니다. 카카오톡 채널에서 답변을 확인해주세요.</div> : <><KakaoChannelAction className="gold-button modal-kakao-action" /><form className="form" onSubmit={submitForm}><label>문의 유형<input name="category" required placeholder="멤버십 / 분석 번호 / 결제 등" /></label><label>연락받을 카카오톡 아이디<input name="contact" required placeholder="카카오톡 채널 상담을 위해 필요합니다" /></label><label>문의 내용<textarea name="message" required placeholder="궁금한 내용을 남겨주세요." /></label>{submitError && <div className="form-error">{submitError}</div>}<button className="gold-button" type="submit" disabled={submitting}>{submitting ? '접수 중...' : '문의 접수하기'} <MessageCircle size={15} /></button></form></>}</Modal>}
