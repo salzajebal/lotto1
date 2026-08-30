@@ -1,10 +1,13 @@
 import {
   boolean,
+  date,
+  index,
   integer,
   pgTable,
   serial,
   text,
   timestamp,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 const timestamps = {
@@ -71,6 +74,23 @@ export const analysisDatabasesTable = pgTable("analysis_databases", {
   notes: text("notes").notNull().default(""),
   ...timestamps,
 });
+
+export const analysisDatabaseRowsTable = pgTable("analysis_database_rows", {
+  id: serial("id").primaryKey(),
+  databaseId: integer("database_id").notNull().references(() => analysisDatabasesTable.id, { onDelete: "cascade" }),
+  phone: text("phone").notNull(),
+  memberName: text("member_name").notNull(),
+  amount: integer("amount").notNull().default(0),
+  recordedDate: date("recorded_date", { mode: "string" }).notNull(),
+  ...timestamps,
+}, (table) => ({
+  uniqueRow: uniqueIndex("analysis_database_rows_unique_row_idx")
+    .on(table.databaseId, table.phone, table.memberName, table.amount, table.recordedDate),
+  databaseDate: index("analysis_database_rows_database_date_idx")
+    .on(table.databaseId, table.recordedDate),
+  databasePhone: index("analysis_database_rows_database_phone_idx")
+    .on(table.databaseId, table.phone),
+}));
 
 export const dbAssignmentsTable = pgTable("db_assignments", {
   id: serial("id").primaryKey(),
@@ -149,6 +169,7 @@ export type AdminUser = typeof adminUsersTable.$inferSelect;
 export type Member = typeof membersTable.$inferSelect;
 export type MemberGrade = typeof memberGradesTable.$inferSelect;
 export type AnalysisDatabase = typeof analysisDatabasesTable.$inferSelect;
+export type AnalysisDatabaseRow = typeof analysisDatabaseRowsTable.$inferSelect;
 export type SupportInquiry = typeof supportInquiriesTable.$inferSelect;
 export type WinningReview = typeof winningReviewsTable.$inferSelect;
 export type CommunityPost = typeof communityPostsTable.$inferSelect;

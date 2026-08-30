@@ -1,7 +1,9 @@
 import { useState, useMemo } from 'react';
 import { useDatabases, useStaff, useCreateDatabase, useBulkAssignDatabases, useAssignDatabase } from '../api';
 import { Card, Table, Th, Td, Badge, Button, Input, Select, Modal, Label, Textarea } from '../components/UI';
-import { Plus, UserPlus, Loader2, CheckSquare } from 'lucide-react';
+import DatabaseImportModal from '../components/DatabaseImportModal';
+import DatabaseRowsModal from '../components/DatabaseRowsModal';
+import { Eye, Plus, Upload, UserPlus, Loader2, CheckSquare } from 'lucide-react';
 
 export default function DatabasesView({ user }: { user: { role: string } }) {
   const canAssign = user.role === 'owner';
@@ -17,6 +19,8 @@ export default function DatabasesView({ user }: { user: { role: string } }) {
 
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [assignModalOpen, setAssignModalOpen] = useState(false);
+  const [importModalOpen, setImportModalOpen] = useState(false);
+  const [detailDatabase, setDetailDatabase] = useState<any | null>(null);
   const [targetStaffId, setTargetStaffId] = useState<number>(0);
   const [singleAssignId, setSingleAssignId] = useState<number | null>(null);
 
@@ -60,15 +64,22 @@ export default function DatabasesView({ user }: { user: { role: string } }) {
           <h1 className="text-2xl font-bold text-white mb-1">분석 DB 관리</h1>
           <p className="text-[var(--ad-muted)] text-sm">생성된 분석 데이터베이스를 관리하고 직원에게 배정합니다.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {canAssign && selectedIds.size > 0 && (
             <Button variant="secondary" className="gap-2" onClick={() => { setSingleAssignId(null); setTargetStaffId(activeStaff[0]?.id || 0); setAssignModalOpen(true); }}>
               <UserPlus size={16} /> 일괄 배정 ({selectedIds.size})
             </Button>
           )}
-          {canAssign && <Button onClick={() => setModalOpen(true)} className="gap-2">
-            <Plus size={16} /> 신규 DB 생성
-          </Button>}
+          {canAssign && (
+            <>
+              <Button variant="secondary" onClick={() => setImportModalOpen(true)} className="gap-2">
+                <Upload size={16} /> 엑셀 DB 등록
+              </Button>
+              <Button onClick={() => setModalOpen(true)} className="gap-2">
+                <Plus size={16} /> 신규 DB 생성
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
@@ -84,6 +95,7 @@ export default function DatabasesView({ user }: { user: { role: string } }) {
               <Th>DB 식별자</Th>
               <Th>회차</Th>
               <Th>단가</Th>
+              <Th>등록 건수</Th>
               <Th>담당자</Th>
               <Th>상태</Th>
               <Th>생성일</Th>
@@ -99,6 +111,15 @@ export default function DatabasesView({ user }: { user: { role: string } }) {
                 <Td className="font-semibold text-white">{db.name}</Td>
                 <Td>{db.drawNumber ? `${db.drawNumber}회` : '-'}</Td>
                 <Td>₩{db.price.toLocaleString()}</Td>
+                <Td>
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1.5 text-[var(--ad-info)] hover:text-white transition-colors"
+                    onClick={() => setDetailDatabase(db)}
+                  >
+                    <Eye size={14} /> {Number(db.entryCount || 0).toLocaleString()}건
+                  </button>
+                </Td>
                 <Td>{db.staffName ? <span className="text-[var(--ad-info)]">{db.staffName}</span> : <span className="text-[var(--ad-muted)]">미배정</span>}</Td>
                 <Td><Badge variant={db.status === 'ready' ? 'warning' : 'success'}>{db.status === 'ready' ? '대기' : db.status}</Badge></Td>
                 <Td><span className="text-[var(--ad-muted)]">{new Date(db.createdAt).toLocaleDateString()}</span></Td>
@@ -110,7 +131,7 @@ export default function DatabasesView({ user }: { user: { role: string } }) {
               </tr>
             ))}
             {databases?.length === 0 && (
-              <tr><Td colSpan={8} className="text-center py-8 text-[var(--ad-muted)]">생성된 분석 DB가 없습니다.</Td></tr>
+              <tr><Td colSpan={9} className="text-center py-8 text-[var(--ad-muted)]">생성된 분석 DB가 없습니다.</Td></tr>
             )}
           </tbody>
         </Table>
@@ -161,6 +182,13 @@ export default function DatabasesView({ user }: { user: { role: string } }) {
           </div>
         </form>
       </Modal>
+
+      <DatabaseImportModal
+        isOpen={importModalOpen}
+        onClose={() => setImportModalOpen(false)}
+        databases={databases || []}
+      />
+      <DatabaseRowsModal database={detailDatabase} onClose={() => setDetailDatabase(null)} />
     </div>
   );
 }

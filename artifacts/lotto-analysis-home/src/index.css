@@ -1853,3 +1853,92 @@ a { color: inherit; text-decoration: none; }
      font-size: 13px;
    }
 }
+
+.portal-membership-intro {
+  flex: 1;
+  min-width: 220px;
+}
+
+.portal-membership-offers {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(170px, 1fr));
+  min-width: 440px;
+  border: 1px solid #456985;
+  background: rgba(4, 17, 38, .28);
+}
+
+.portal-offer {
+  min-height: 126px;
+  padding: 18px 20px;
+}
+
+.portal-offer + .portal-offer {
+  border-left: 1px solid #456985;
+}
+
+.portal-offer small {
+  display: block;
+  color: #e0bc5e;
+  font: 9px var(--app-font-mono);
+}
+
+.portal-offer strong {
+  display: block;
+  margin: 8px 0;
+  color: #f4f5ee;
+  font: 800 23px Manrope;
+  letter-spacing: -.04em;
+}
+
+.portal-offer strong em {
+  color: inherit;
+  font: 500 12px var(--app-font-sans);
+}
+
+.portal-offer p {
+  margin: 0;
+  color: #a9bfd0;
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+.portal-offer button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 13px;
+  border: 0;
+  background: none;
+  color: #e8c560;
+  font-size: 11px;
+}
+
+.portal-offer-vip {
+  background: rgba(232, 187, 81, .07);
+}
+
+.portal-offer-premium strong {
+  margin-bottom: 25px;
+}
+
+@media (max-width: 860px) {
+  .portal-membership {
+    display: block;
+  }
+
+  .portal-membership-offers {
+    margin-top: 24px;
+  }
+}
+
+@media (max-width: 560px) {
+  .portal-membership-offers {
+    display: block;
+    min-width: 0;
+  }
+
+  .portal-offer + .portal-offer {
+    border-top: 1px solid #456985;
+    border-left: 0;
+  }
+}

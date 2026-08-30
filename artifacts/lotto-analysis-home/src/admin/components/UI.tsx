@@ -76,14 +76,15 @@ export function Label({ children, className = '' }: { children: ReactNode, class
 }
 
 export function Modal({ 
-  title, isOpen, onClose, children 
+  title, isOpen, onClose, children, size = 'md',
 }: { 
-  title: string; isOpen: boolean; onClose: () => void; children: ReactNode 
+  title: string; isOpen: boolean; onClose: () => void; children: ReactNode; size?: 'md' | 'xl';
 }) {
   if (!isOpen) return null;
+  const maxWidth = size === 'xl' ? 'max-w-5xl' : 'max-w-md';
   return (
     <div className="admin-modal-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="bg-[var(--ad-panel)] border border-[var(--ad-border)] rounded-xl w-full max-w-md shadow-2xl flex flex-col max-h-[90vh]">
+      <div className={`bg-[var(--ad-panel)] border border-[var(--ad-border)] rounded-xl w-full ${maxWidth} shadow-2xl flex flex-col max-h-[90vh]`}>
         <div className="flex items-center justify-between p-5 border-b border-[var(--ad-border)]">
           <h2 className="text-lg font-bold text-white tracking-tight">{title}</h2>
           <button onClick={onClose} className="text-[var(--ad-muted)] hover:text-white transition-colors">

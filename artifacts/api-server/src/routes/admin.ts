@@ -1,12 +1,15 @@
 import { Router, type IRouter, type Request, type Response, type NextFunction } from "express";
 import cookieParser from "cookie-parser";
+import multer from "multer";
 import { createHash, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
+import { Worker } from "node:worker_threads";
 import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { z } from "zod/v4";
 import {
   adminSessionsTable,
   adminUsersTable,
   analysisDatabasesTable,
+  analysisDatabaseRowsTable,
   auditEventsTable,
   communityPostsTable,
   consultationNotesTable,
@@ -73,6 +76,224 @@ const verifyPassword = (password: string, stored: string) => {
 const addDays = (days: number) => new Date(Date.now() + days * 24 * 60 * 60 * 1000);
 const publicWriteAttempts = new Map<string, { count: number; resetAt: number }>();
 const loginAttempts = new Map<string, { count: number; resetAt: number }>();
+const excelUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 25 * 1024 * 1024, files: 1 },
+});
+const IMPORT_BATCH_SIZE = 500;
+const MAX_IMPORT_ROWS = 50_000;
+const MAX_IMPORT_COLUMNS = 100;
+const EXCEL_PARSE_TIMEOUT_MS = 20_000;
+let activeExcelParses = 0;
+
+type ImportMapping = {
+  phone: number;
+  name: number;
+  amount: number;
+  date: number;
+};
+
+type ParsedImportRow = {
+  phone: string;
+  memberName: string;
+  amount: number;
+  recordedDate: string;
+};
+
+type ImportRowError = {
+  row: number;
+  message: string;
+};
+
+const importAliases: Record<keyof ImportMapping, string[]> = {
+  phone: ["전화번호", "연락처", "휴대폰", "휴대전화", "phone", "mobile"],
+  name: ["이름", "성명", "회원명", "name", "membername"],
+  amount: ["금액", "당첨금액", "당첨금", "amount", "prize"],
+  date: ["날짜", "당첨일", "등록일", "일자", "date", "recordeddate"],
+};
+
+const normalizeHeader = (value: unknown) =>
+  String(value ?? "").trim().toLowerCase().replace(/\s+/g, "").replace(/[()（）_./-]/g, "");
+
+const findSuggestedColumn = (headers: string[], field: keyof ImportMapping) => {
+  const aliases = new Set(importAliases[field].map(normalizeHeader));
+  return headers.findIndex((header) => aliases.has(normalizeHeader(header)));
+};
+
+const receiveExcel = (req: Request, res: Response, next: NextFunction) => {
+  excelUpload.single("file")(req, res, (error) => {
+    if (error) {
+      res.status(400).json({ error: error instanceof Error ? error.message : "엑셀 파일을 업로드할 수 없습니다." });
+      return;
+    }
+    next();
+  });
+};
+
+const validateExcelFile = (file: Express.Multer.File | undefined, res: Response) => {
+  if (!file) {
+    res.status(400).json({ error: "엑셀 파일을 선택해주세요." });
+    return false;
+  }
+  const extension = file.originalname.toLowerCase().split(".").pop();
+  if (extension !== "xlsx" && extension !== "xls") {
+    res.status(400).json({ error: "xlsx 또는 xls 형식의 엑셀 파일만 업로드할 수 있습니다." });
+    return false;
+  }
+  return true;
+};
+
+const excelWorkerSource = `
+  const { parentPort, workerData } = require("node:worker_threads");
+  const XLSX = require("xlsx");
+  try {
+    const workbook = XLSX.read(workerData.buffer, {
+      type: "buffer",
+      cellDates: false,
+      dense: true,
+      sheetRows: workerData.maxRows + 2,
+    });
+    const sheetName = workbook.SheetNames[0];
+    if (!sheetName) throw new Error("엑셀 파일에 읽을 수 있는 시트가 없습니다.");
+    const sheet = workbook.Sheets[sheetName];
+    const range = sheet["!ref"] ? XLSX.utils.decode_range(sheet["!ref"]) : null;
+    if (range && range.e.c + 1 > workerData.maxColumns) {
+      throw new Error("엑셀 파일의 컬럼 수가 너무 많습니다.");
+    }
+    const rows = XLSX.utils.sheet_to_json(sheet, {
+      header: 1,
+      raw: false,
+      defval: "",
+      blankrows: false,
+    }).map((row) => row.map((value) => String(value ?? "").trim()));
+    if (rows.length < 2) throw new Error("첫 번째 행에 컬럼명이 있고, 그 아래에 데이터가 있어야 합니다.");
+    if (rows.length - 1 > workerData.maxRows) {
+      throw new Error("한 번에 최대 " + workerData.maxRows.toLocaleString() + "행까지 등록할 수 있습니다.");
+    }
+    parentPort.postMessage({ ok: true, data: { sheetName, rows } });
+  } catch (error) {
+    parentPort.postMessage({ ok: false, error: error instanceof Error ? error.message : "엑셀 파일을 읽을 수 없습니다." });
+  }
+`;
+
+const readExcel = async (buffer: Buffer): Promise<{ sheetName: string; headers: string[]; rows: string[][] }> => {
+  if (activeExcelParses >= 1) throw new Error("다른 엑셀 파일을 처리 중입니다. 잠시 후 다시 시도해주세요.");
+  const isZip = buffer[0] === 0x50 && buffer[1] === 0x4b;
+  const isOle = buffer.subarray(0, 8).equals(Buffer.from([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]));
+  if (!isZip && !isOle) throw new Error("올바른 엑셀 파일 형식이 아닙니다.");
+  activeExcelParses += 1;
+  try {
+    const parsed = await new Promise<{ sheetName: string; rows: string[][] }>((resolve, reject) => {
+      const worker = new Worker(excelWorkerSource, {
+        eval: true,
+        workerData: { buffer, maxRows: MAX_IMPORT_ROWS, maxColumns: MAX_IMPORT_COLUMNS },
+        resourceLimits: { maxOldGenerationSizeMb: 192, maxYoungGenerationSizeMb: 32 },
+      });
+      const timeout = setTimeout(() => {
+        void worker.terminate();
+        reject(new Error("엑셀 파일 처리 시간이 초과되었습니다."));
+      }, EXCEL_PARSE_TIMEOUT_MS);
+      worker.once("message", (message: { ok: boolean; data?: { sheetName: string; rows: string[][] }; error?: string }) => {
+        clearTimeout(timeout);
+        void worker.terminate();
+        if (message.ok && message.data) resolve(message.data);
+        else reject(new Error(message.error || "엑셀 파일을 읽을 수 없습니다."));
+      });
+      worker.once("error", (error) => {
+        clearTimeout(timeout);
+        reject(error);
+      });
+      worker.once("exit", (code) => {
+        if (code !== 0) {
+          clearTimeout(timeout);
+          reject(new Error("엑셀 파일 처리 중 메모리 제한을 초과했습니다."));
+        }
+      });
+    });
+    const headers = parsed.rows[0].map((value) => value.trim());
+    if (headers.some((header) => !header)) throw new Error("컬럼명에 빈 셀이 있습니다.");
+    if (new Set(headers.map(normalizeHeader)).size !== headers.length) throw new Error("중복된 컬럼명이 있습니다.");
+    return { sheetName: parsed.sheetName, headers, rows: parsed.rows.slice(1) };
+  } finally {
+    activeExcelParses -= 1;
+  }
+};
+
+const cellText = (value: unknown) => String(value ?? "").trim();
+
+const parseImportDate = (value: unknown) => {
+  const raw = cellText(value).replace(/[./]/g, "-").replace(/\s+/g, "");
+  const serial = Number(raw);
+  if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(raw)) {
+    const [year, month, day] = raw.split("-").map(Number);
+    const date = new Date(Date.UTC(year, month - 1, day));
+    if (
+      year >= 1900
+      && year <= 2100
+      && date.getUTCFullYear() === year
+      && date.getUTCMonth() === month - 1
+      && date.getUTCDate() === day
+    ) {
+      return `${year.toString().padStart(4, "0")}-${month.toString().padStart(2, "0")}-${day.toString().padStart(2, "0")}`;
+    }
+  }
+  if (Number.isFinite(serial) && serial > 1) {
+    const date = new Date(Date.UTC(1899, 11, 30) + Math.floor(serial) * 86_400_000);
+    const year = date.getUTCFullYear();
+    if (Number.isFinite(date.getTime()) && year >= 1900 && year <= 2100) {
+      return `${year.toString().padStart(4, "0")}-${(date.getUTCMonth() + 1).toString().padStart(2, "0")}-${date.getUTCDate().toString().padStart(2, "0")}`;
+    }
+  }
+  return null;
+};
+
+const parseImportAmount = (value: unknown) => {
+  const raw = cellText(value).replace(/[₩,\s]/g, "");
+  if (!/^\d+$/.test(raw)) return null;
+  const amount = Number(raw);
+  return Number.isSafeInteger(amount) && amount >= 0 && amount <= 2_147_483_647 ? amount : null;
+};
+
+const parseImportPhone = (value: unknown) => {
+  const raw = cellText(value);
+  if (!/^[\d\s()-]+$/.test(raw)) return null;
+  const phone = raw.replace(/\D/g, "");
+  return /^010\d{8}$/.test(phone) ? phone : null;
+};
+
+const parseImportRows = (rows: unknown[][], mapping: ImportMapping) => {
+  const validRows: ParsedImportRow[] = [];
+  const errors: ImportRowError[] = [];
+  const seen = new Set<string>();
+  let duplicateCount = 0;
+
+  rows.forEach((row, index) => {
+    const rowNumber = index + 2;
+    const phone = parseImportPhone(row[mapping.phone]);
+    const memberName = cellText(row[mapping.name]);
+    const amount = parseImportAmount(row[mapping.amount]);
+    const recordedDate = parseImportDate(row[mapping.date]);
+    const rowErrors: string[] = [];
+    if (!phone) rowErrors.push("전화번호는 010으로 시작하는 휴대전화 번호 11자리여야 합니다.");
+    if (!memberName || memberName.length > 100) rowErrors.push("이름을 입력하고 100자 이내로 작성해주세요.");
+    if (amount == null) rowErrors.push("금액은 0 이상의 숫자로 입력해주세요.");
+    if (!recordedDate) rowErrors.push("날짜는 YYYY-MM-DD 형식으로 입력해주세요.");
+    if (rowErrors.length) {
+      errors.push({ row: rowNumber, message: rowErrors.join(" ") });
+      return;
+    }
+    const parsed = { phone: phone!, memberName, amount: amount!, recordedDate: recordedDate! };
+    const key = `${parsed.phone}|${parsed.memberName}|${parsed.amount}|${parsed.recordedDate}`;
+    if (seen.has(key)) {
+      duplicateCount += 1;
+      return;
+    }
+    seen.add(key);
+    validRows.push(parsed);
+  });
+
+  return { validRows, errors, duplicateCount };
+};
 
 const publicWriteRateLimit = (req: Request, res: Response, next: NextFunction) => {
   const key = req.ip || "unknown";
@@ -209,6 +430,13 @@ async function canAccessInquiry(req: Request, inquiryId: number) {
   const [inquiry] = await db.select({ id: supportInquiriesTable.id }).from(supportInquiriesTable)
     .where(and(eq(supportInquiriesTable.id, inquiryId), eq(supportInquiriesTable.assignedStaffId, req.adminUser!.id))).limit(1);
   return Boolean(inquiry);
+}
+
+async function canAccessDatabase(req: Request, databaseId: number) {
+  if (isOwner(req)) return true;
+  const [database] = await db.select({ id: analysisDatabasesTable.id }).from(analysisDatabasesTable)
+    .where(and(eq(analysisDatabasesTable.id, databaseId), eq(analysisDatabasesTable.assignedStaffId, req.adminUser!.id))).limit(1);
+  return Boolean(database);
 }
 
 router.use(cookieParser());
@@ -395,6 +623,149 @@ router.get("/admin/dashboard", async (req, res): Promise<void> => {
     staff,
     recentInquiries,
   });
+});
+
+router.post("/admin/databases/import/preview", requireOwner, receiveExcel, async (req, res): Promise<void> => {
+  if (!validateExcelFile(req.file, res)) return;
+  try {
+    const workbook = await readExcel(req.file!.buffer);
+    const suggestedMapping: Partial<ImportMapping> = {
+      phone: findSuggestedColumn(workbook.headers, "phone"),
+      name: findSuggestedColumn(workbook.headers, "name"),
+      amount: findSuggestedColumn(workbook.headers, "amount"),
+      date: findSuggestedColumn(workbook.headers, "date"),
+    };
+    res.json({
+      fileName: req.file!.originalname,
+      sheetName: workbook.sheetName,
+      totalRows: workbook.rows.length,
+      headers: workbook.headers,
+      suggestedMapping,
+      sampleRows: workbook.rows.slice(0, 5).map((row) => workbook.headers.map((_, index) => cellText(row[index]))),
+    });
+  } catch (error) {
+    res.status(400).json({ error: error instanceof Error ? error.message : "엑셀 파일을 읽을 수 없습니다." });
+  }
+});
+
+router.post("/admin/databases/import", requireOwner, receiveExcel, async (req, res): Promise<void> => {
+  if (!validateExcelFile(req.file, res)) return;
+  const name = text(req.body?.name);
+  if (!name) {
+    res.status(400).json({ error: "분석 DB 이름을 입력해주세요." });
+    return;
+  }
+
+  let mapping: ImportMapping;
+  try {
+    const rawMapping = typeof req.body?.mapping === "string" ? JSON.parse(req.body.mapping) : req.body?.mapping;
+    const parsedMapping = z.object({
+      phone: z.coerce.number().int().nonnegative(),
+      name: z.coerce.number().int().nonnegative(),
+      amount: z.coerce.number().int().nonnegative(),
+      date: z.coerce.number().int().nonnegative(),
+    }).safeParse(rawMapping);
+    if (!parsedMapping.success) {
+      res.status(400).json({ error: "전화번호·이름·금액·날짜 컬럼을 모두 선택해주세요." });
+      return;
+    }
+    mapping = parsedMapping.data;
+    if (new Set(Object.values(mapping)).size !== 4) {
+      res.status(400).json({ error: "전화번호·이름·금액·날짜는 서로 다른 컬럼을 선택해주세요." });
+      return;
+    }
+  } catch {
+    res.status(400).json({ error: "컬럼 매핑 정보를 확인해주세요." });
+    return;
+  }
+
+  try {
+    const workbook = await readExcel(req.file!.buffer);
+    const maxColumn = Math.max(mapping.phone, mapping.name, mapping.amount, mapping.date);
+    if (maxColumn >= workbook.headers.length) {
+      res.status(400).json({ error: "선택한 컬럼이 엑셀 파일에 없습니다." });
+      return;
+    }
+    const { validRows, errors, duplicateCount: inFileDuplicateCount } = parseImportRows(workbook.rows, mapping);
+    if (validRows.length === 0) {
+      res.status(400).json({
+        error: "등록할 수 있는 데이터가 없습니다. 컬럼 매핑과 행별 오류를 확인해주세요.",
+        totalRows: workbook.rows.length,
+        importedCount: 0,
+        duplicateCount: inFileDuplicateCount,
+        invalidCount: errors.length,
+        errors: errors.slice(0, 100),
+        errorCount: errors.length,
+      });
+      return;
+    }
+
+    const priceValue = text(req.body?.price);
+    const price = priceValue ? parseImportAmount(priceValue) : 0;
+    if (price == null) {
+      res.status(400).json({ error: "기대 단가는 0 이상의 숫자로 입력해주세요." });
+      return;
+    }
+    const drawNumberValue = text(req.body?.drawNumber);
+    const drawNumber = drawNumberValue ? int(drawNumberValue) : null;
+    if (drawNumber != null && drawNumber < 1) {
+      res.status(400).json({ error: "관련 회차는 1 이상의 숫자로 입력해주세요." });
+      return;
+    }
+    const databaseIdValue = text(req.body?.databaseId);
+    const targetDatabaseId = databaseIdValue ? int(databaseIdValue) : null;
+    if (targetDatabaseId != null && targetDatabaseId < 1) {
+      res.status(400).json({ error: "업로드할 분석 DB를 선택해주세요." });
+      return;
+    }
+    const notes = text(req.body?.notes);
+    const result = await db.transaction(async (tx) => {
+      const database = targetDatabaseId
+        ? (await tx.select().from(analysisDatabasesTable).where(eq(analysisDatabasesTable.id, targetDatabaseId)).limit(1))[0]
+        : (await tx.insert(analysisDatabasesTable).values({
+            name,
+            drawNumber,
+            price,
+            notes,
+          }).returning())[0];
+      if (!database) throw new Error("업로드할 분석 DB를 찾을 수 없습니다.");
+      let importedCount = 0;
+      for (let index = 0; index < validRows.length; index += IMPORT_BATCH_SIZE) {
+        const chunk = validRows.slice(index, index + IMPORT_BATCH_SIZE).map((row) => ({
+          databaseId: database.id,
+          ...row,
+        }));
+        const inserted = await tx.insert(analysisDatabaseRowsTable)
+          .values(chunk)
+          .onConflictDoNothing()
+          .returning({ id: analysisDatabaseRowsTable.id });
+        importedCount += inserted.length;
+      }
+      return { database, importedCount };
+    });
+    const databaseDuplicateCount = validRows.length - result.importedCount;
+    const duplicateCount = inFileDuplicateCount + databaseDuplicateCount;
+    await recordEvent(
+      req,
+      "import",
+      "database",
+      result.database.id,
+      `${result.importedCount}건 등록 · ${duplicateCount}건 중복 · ${errors.length}건 오류`,
+    );
+    res.status(201).json({
+      database: result.database,
+      fileName: req.file!.originalname,
+      totalRows: workbook.rows.length,
+      importedCount: result.importedCount,
+      duplicateCount,
+      invalidCount: errors.length,
+      errors: errors.slice(0, 100),
+      errorCount: errors.length,
+    });
+  } catch (error) {
+    req.log.error({ err: error }, "Excel analysis database import failed");
+    res.status(400).json({ error: error instanceof Error ? error.message : "엑셀 데이터를 등록할 수 없습니다." });
+  }
 });
 
 router.get("/admin/members", async (req, res): Promise<void> => {
@@ -668,12 +1039,20 @@ router.delete("/admin/grades/:id", requireOwner, async (req, res): Promise<void>
 });
 
 router.get("/admin/databases", async (req, res): Promise<void> => {
-  const rows = await db.select({ database: analysisDatabasesTable, staffName: adminUsersTable.name })
+  const rows = await db.select({
+    database: analysisDatabasesTable,
+    staffName: adminUsersTable.name,
+    entryCount: sql<number>`(
+      select count(*)::int
+      from ${analysisDatabaseRowsTable}
+      where ${analysisDatabaseRowsTable.databaseId} = ${analysisDatabasesTable.id}
+    )`,
+  })
     .from(analysisDatabasesTable)
     .leftJoin(adminUsersTable, eq(analysisDatabasesTable.assignedStaffId, adminUsersTable.id))
     .where(isOwner(req) ? undefined : eq(analysisDatabasesTable.assignedStaffId, req.adminUser!.id))
     .orderBy(desc(analysisDatabasesTable.createdAt));
-  res.json(rows.map(({ database, staffName }) => ({ ...database, staffName })));
+  res.json(rows.map(({ database, staffName, entryCount }) => ({ ...database, staffName, entryCount })));
 });
 
 router.post("/admin/databases", requireOwner, async (req, res): Promise<void> => {
@@ -703,6 +1082,44 @@ router.post("/admin/databases/bulk-assign", requireOwner, async (req, res): Prom
   });
   await recordEvent(req, "assign", "database", undefined, `${body.databaseIds.length}개 DB`);
   res.json({ ok: true });
+});
+
+router.get("/admin/databases/:id/rows", async (req, res): Promise<void> => {
+  const databaseId = int(req.params.id);
+  if (!(await canAccessDatabase(req, databaseId))) {
+    res.status(403).json({ error: "이 분석 DB를 조회할 권한이 없습니다." });
+    return;
+  }
+  const page = Math.max(1, int(req.query.page, 1));
+  const limit = Math.min(100, Math.max(1, int(req.query.limit, 50)));
+  const search = text(req.query.search);
+  const filters = [eq(analysisDatabaseRowsTable.databaseId, databaseId)];
+  if (search) {
+    filters.push(or(
+      ilike(analysisDatabaseRowsTable.phone, `%${search}%`),
+      ilike(analysisDatabaseRowsTable.memberName, `%${search}%`),
+      sql`${analysisDatabaseRowsTable.recordedDate}::text ilike ${`%${search}%`}`,
+    )!);
+  }
+  const where = and(...filters);
+  const [[count], rows] = await Promise.all([
+    db.select({ count: sql<number>`count(*)::int` }).from(analysisDatabaseRowsTable).where(where),
+    db.select().from(analysisDatabaseRowsTable)
+      .where(where)
+      .orderBy(desc(analysisDatabaseRowsTable.recordedDate), desc(analysisDatabaseRowsTable.id))
+      .limit(limit)
+      .offset((page - 1) * limit),
+  ]);
+  const total = count?.count ?? 0;
+  res.json({
+    rows,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / limit)),
+    },
+  });
 });
 
 router.post("/admin/databases/:id/assign", requireOwner, async (req, res): Promise<void> => {

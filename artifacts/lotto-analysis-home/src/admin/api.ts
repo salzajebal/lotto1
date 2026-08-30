@@ -4,13 +4,14 @@ import { useToast } from '@/hooks/use-toast';
 const API_BASE = '/api/admin';
 
 export const fetcher = async (url: string, options?: RequestInit) => {
+  const headers = new Headers(options?.headers);
+  if (!(options?.body instanceof FormData) && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
   const res = await fetch(url, {
     ...options,
     credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
+    headers,
   });
   if (!res.ok) {
     const error = await res.json().catch(() => ({}));
@@ -189,6 +190,77 @@ export function useCreateDatabase() {
   return useMutation({
     mutationFn: (data: any) => fetcher(`${API_BASE}/databases`, { method: 'POST', body: JSON.stringify(data) }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['adminDatabases'] })
+  });
+}
+
+export type DatabaseImportPreview = {
+  fileName: string;
+  sheetName: string;
+  totalRows: number;
+  headers: string[];
+  suggestedMapping: Partial<Record<'phone' | 'name' | 'amount' | 'date', number>>;
+  sampleRows: string[][];
+};
+
+export type DatabaseImportResult = {
+  database: any;
+  fileName: string;
+  totalRows: number;
+  importedCount: number;
+  duplicateCount: number;
+  invalidCount: number;
+  errorCount: number;
+  errors: Array<{ row: number; message: string }>;
+};
+
+export function usePreviewDatabaseImport() {
+  return useMutation({
+    mutationFn: (file: File) => {
+      const data = new FormData();
+      data.append('file', file);
+      return fetcher(`${API_BASE}/databases/import/preview`, { method: 'POST', body: data }) as Promise<DatabaseImportPreview>;
+    },
+  });
+}
+
+export function useImportDatabase() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: {
+      file: File;
+      databaseId?: number;
+      name: string;
+      drawNumber?: string;
+      price?: number;
+      notes?: string;
+      mapping: Record<'phone' | 'name' | 'amount' | 'date', number>;
+    }) => {
+      const formData = new FormData();
+      formData.append('file', data.file);
+      if (data.databaseId) formData.append('databaseId', String(data.databaseId));
+      formData.append('name', data.name);
+      formData.append('drawNumber', data.drawNumber || '');
+      formData.append('price', String(data.price || 0));
+      formData.append('notes', data.notes || '');
+      formData.append('mapping', JSON.stringify(data.mapping));
+      return fetcher(`${API_BASE}/databases/import`, { method: 'POST', body: formData }) as Promise<DatabaseImportResult>;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminDatabases'] });
+      queryClient.invalidateQueries({ queryKey: ['adminDashboard'] });
+    },
+  });
+}
+
+export function useDatabaseRows(databaseId: number | null, params?: { search?: string; page?: number; limit?: number }) {
+  const qs = new URLSearchParams();
+  if (params?.search) qs.set('search', params.search);
+  if (params?.page) qs.set('page', String(params.page));
+  if (params?.limit) qs.set('limit', String(params.limit));
+  return useQuery({
+    queryKey: ['adminDatabaseRows', databaseId, params],
+    queryFn: () => fetcher(`${API_BASE}/databases/${databaseId}/rows?${qs.toString()}`),
+    enabled: databaseId != null,
   });
 }
 
