@@ -1,1 +1,2 @@
 - [신뢰 배지 표현](trust-badge-policy.md) — 공식 자산이 확인되기 전에는 인증을 암시하는 로고 대신 범용 아이콘과 중립 문구를 사용한다.
+- [캔버스 라이브 전환](canvas-live-transition.md) — iframe을 live로 바꿀 때 업데이트와 정렬 작업은 분리해 검증 실패를 피한다.
