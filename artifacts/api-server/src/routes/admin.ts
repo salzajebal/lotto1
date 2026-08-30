@@ -257,7 +257,7 @@ router.post("/admin/auth/bootstrap", async (req, res): Promise<void> => {
       { name: "VIP", slug: "vip", price: 0, color: "#E4B957", description: "1·2등 맞춤 상담", benefits: ["1·2등 맞춤 분석", "전담 상담", "프리미엄 리포트"] },
       { name: "프리미엄", slug: "premium", price: 330000, color: "#6B9DFF", description: "3등 분석 번호", benefits: ["매주 분석 번호", "회차별 리포트", "상담 복기"] },
       { name: "스탠다드", slug: "standard", price: 99000, color: "#8D96A8", description: "기본 분석 서비스", benefits: ["주간 번호 안내", "기초 리포트"] },
-    ]);
+    ]).onConflictDoNothing({ target: memberGradesTable.slug });
     return created;
   });
   if (!user) {

@@ -38,9 +38,7 @@ function AuthScreen({ needsBootstrap }: { needsBootstrap: boolean }) {
             <span className="-rotate-45 text-[var(--ad-gold)] font-bold text-xl">R</span>
           </div>
           <p className="text-[var(--ad-gold)] text-sm font-bold tracking-tight mb-2">로또리코</p>
-          <h1 className="text-2xl font-bold tracking-tight text-white">
-            {needsBootstrap ? '관리자 계정 생성' : '운영 콘솔 로그인'}
-          </h1>
+          <h1 className="text-2xl font-bold tracking-tight text-white">운영 콘솔 로그인</h1>
           <p className="text-[var(--ad-muted)] text-sm mt-2">
             아이디와 비밀번호만 입력하세요.
           </p>
@@ -56,7 +54,7 @@ function AuthScreen({ needsBootstrap }: { needsBootstrap: boolean }) {
             <Input required type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" autoComplete="current-password" />
           </div>
           <Button type="submit" className="w-full mt-2" disabled={login.isPending || bootstrap.isPending}>
-            {(login.isPending || bootstrap.isPending) ? <Loader2 size={16} className="animate-spin" /> : (needsBootstrap ? '계정 생성' : '로그인')}
+            {(login.isPending || bootstrap.isPending) ? <Loader2 size={16} className="animate-spin" /> : '로그인'}
           </Button>
         </form>
       </Card>
