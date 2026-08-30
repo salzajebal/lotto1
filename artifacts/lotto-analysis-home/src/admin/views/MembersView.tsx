@@ -20,7 +20,7 @@ export default function MembersView() {
   const updateMember = useUpdateMember();
 
   const [form, setForm] = useState({
-    name: '', email: '', phone: '', gradeId: 0, status: 'active', assignedStaffId: 0, monthlyRevenue: 0, notes: ''
+    name: '', email: '', phone: '', gradeId: 0, status: 'active', assignedStaffId: 0, paymentAmount: 0, monthlyRevenue: 0, notes: ''
   });
 
   const openModal = (member?: any) => {
@@ -29,12 +29,12 @@ export default function MembersView() {
       setForm({
         name: member.name, email: member.email || '', phone: member.phone || '',
         gradeId: member.gradeId || 0, status: member.status, assignedStaffId: member.assignedStaffId || 0,
-        monthlyRevenue: member.monthlyRevenue || 0, notes: member.notes || ''
+        paymentAmount: member.paymentAmount || 0, monthlyRevenue: member.monthlyRevenue || 0, notes: member.notes || ''
       });
     } else {
       setEditingId(null);
       setForm({
-        name: '', email: '', phone: '', gradeId: grades?.[0]?.id || 0, status: 'active', assignedStaffId: 0, monthlyRevenue: 0, notes: ''
+        name: '', email: '', phone: '', gradeId: grades?.[0]?.id || 0, status: 'active', assignedStaffId: 0, paymentAmount: 0, monthlyRevenue: 0, notes: ''
       });
     }
     setModalOpen(true);
@@ -46,6 +46,7 @@ export default function MembersView() {
       ...form,
       gradeId: form.gradeId || null,
       assignedStaffId: form.assignedStaffId || null,
+      paymentAmount: Number(form.paymentAmount),
       monthlyRevenue: Number(form.monthlyRevenue)
     };
     if (editingId) {
@@ -97,11 +98,12 @@ export default function MembersView() {
           <thead>
             <tr>
               <Th>이름</Th>
-              <Th>연락처/이메일</Th>
+              <Th>전화번호</Th>
+              <Th>가입일</Th>
+              <Th>실제 결제금액</Th>
               <Th>등급</Th>
               <Th>담당자</Th>
               <Th>상태</Th>
-              <Th>가입일</Th>
               <Th></Th>
             </tr>
           </thead>
@@ -111,8 +113,10 @@ export default function MembersView() {
                 <Td className="font-semibold text-white">{m.name}</Td>
                 <Td>
                   <div className="text-sm">{m.phone || '-'}</div>
-                  <div className="text-xs text-[var(--ad-muted)]">{m.email || '-'}</div>
+                  {m.email && <div className="text-xs text-[var(--ad-muted)]">{m.email}</div>}
                 </Td>
+                <Td><span className="text-[var(--ad-muted)]">{new Date(m.createdAt).toLocaleDateString()}</span></Td>
+                <Td className="font-semibold text-[var(--ad-gold)]">₩{(m.paymentAmount || 0).toLocaleString()}</Td>
                 <Td>
                   {m.gradeName ? (
                     <Badge variant="warning">{m.gradeName}</Badge>
@@ -120,14 +124,13 @@ export default function MembersView() {
                 </Td>
                 <Td>{m.staffName || <span className="text-[var(--ad-muted)]">미배정</span>}</Td>
                 <Td><Badge variant={m.status === 'active' ? 'success' : 'default'}>{m.status === 'active' ? '활성' : '비활성'}</Badge></Td>
-                <Td><span className="text-[var(--ad-muted)]">{new Date(m.createdAt).toLocaleDateString()}</span></Td>
                 <Td className="text-right">
                   <Button variant="ghost" size="sm" onClick={() => openModal(m)}><Edit2 size={14} /></Button>
                 </Td>
               </tr>
             ))}
             {members?.length === 0 && (
-              <tr><Td colSpan={7} className="text-center py-8 text-[var(--ad-muted)]">검색된 회원이 없습니다.</Td></tr>
+              <tr><Td colSpan={8} className="text-center py-8 text-[var(--ad-muted)]">검색된 회원이 없습니다.</Td></tr>
             )}
           </tbody>
         </Table>
@@ -174,9 +177,15 @@ export default function MembersView() {
               </Select>
             </div>
           </div>
-          <div>
-            <Label>월 예상 수익 (원)</Label>
-            <Input type="number" value={form.monthlyRevenue} onChange={e => setForm({...form, monthlyRevenue: Number(e.target.value)})} />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>실제 결제금액 (원)</Label>
+              <Input type="number" min="0" value={form.paymentAmount} onChange={e => setForm({...form, paymentAmount: Number(e.target.value)})} />
+            </div>
+            <div>
+              <Label>월 예상 수익 (원)</Label>
+              <Input type="number" min="0" value={form.monthlyRevenue} onChange={e => setForm({...form, monthlyRevenue: Number(e.target.value)})} />
+            </div>
           </div>
           <div>
             <Label>상담 메모</Label>

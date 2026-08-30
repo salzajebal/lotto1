@@ -986,8 +986,19 @@ a { color: inherit; text-decoration: none; }
 }
 
 .lotto-app .badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-color: #2b3b51;
   background: #101722;
+}
+
+.lotto-app .badge-content {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .lotto-app .badge-mark {
@@ -997,6 +1008,10 @@ a { color: inherit; text-decoration: none; }
 
 .lotto-app .badge strong {
   color: #dbe4f1;
+}
+
+.lotto-app .badge span {
+  color: #8491a5;
 }
 
 .lotto-app .support-strip {
@@ -1043,5 +1058,424 @@ a { color: inherit; text-decoration: none; }
   .lotto-app .community-side,
   .lotto-app .video-card {
     border-radius: 18px;
+  }
+}
+
+/* Standalone community and review pages */
+.standalone-page {
+  min-height: 100vh;
+  background: #0d1118;
+}
+
+.standalone-topbar {
+  background: #090e16;
+  border-bottom-color: #26364b;
+}
+
+.standalone-page .nav a,
+.standalone-page .nav button {
+  color: #aeb9ca;
+}
+
+.standalone-page .nav a:hover {
+  color: #f0c95f;
+}
+
+.standalone-login {
+  color: #aeb9ca;
+  text-decoration: none;
+}
+
+.standalone-hero {
+  position: relative;
+  overflow: hidden;
+  padding: 112px 0 104px;
+  border-bottom: 1px solid #26364b;
+  background:
+    radial-gradient(circle at 78% 20%, rgb(62 102 169 / 0.2), transparent 32%),
+    radial-gradient(circle at 18% 90%, rgb(232 187 81 / 0.08), transparent 28%),
+    #101722;
+}
+
+.standalone-hero::after {
+  content: '';
+  position: absolute;
+  width: 460px;
+  height: 460px;
+  right: -120px;
+  bottom: -280px;
+  border: 1px solid rgb(84 117 166 / 0.22);
+  border-radius: 50%;
+  box-shadow: 0 0 0 30px rgb(84 117 166 / 0.04), 0 0 0 62px rgb(84 117 166 / 0.03);
+}
+
+.standalone-hero .shell {
+  position: relative;
+  z-index: 1;
+}
+
+.standalone-title {
+  max-width: 700px;
+  margin: 20px 0 0;
+  color: #f1f5f9;
+  font: 800 clamp(48px, 7vw, 86px)/.98 Manrope, sans-serif;
+  letter-spacing: -.08em;
+}
+
+.standalone-lede {
+  max-width: 520px;
+  margin: 28px 0 0;
+  color: #a4b0c0;
+  font-size: 16px;
+  line-height: 1.8;
+}
+
+.page-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 32px;
+}
+
+.community-page-stats {
+  display: flex;
+  gap: 0;
+  margin-top: 72px;
+  border-top: 1px solid #2b3b51;
+  max-width: 720px;
+}
+
+.community-page-stats div {
+  min-width: 180px;
+  padding: 22px 24px 0 0;
+  border-right: 1px solid #2b3b51;
+}
+
+.community-page-stats div:not(:first-child) {
+  padding-left: 24px;
+}
+
+.community-page-stats div:last-child {
+  border-right: 0;
+}
+
+.community-page-stats strong {
+  display: block;
+  color: #f0c95f;
+  font: 800 32px Manrope;
+  letter-spacing: -.06em;
+}
+
+.community-page-stats span {
+  display: block;
+  margin-top: 5px;
+  color: #8491a5;
+  font-size: 11px;
+}
+
+.page-section {
+  background: #0d1118;
+}
+
+.community-post-list {
+  display: grid;
+  gap: 12px;
+}
+
+.community-post {
+  display: grid;
+  grid-template-columns: 145px minmax(0, 1fr) auto 20px;
+  align-items: center;
+  gap: 20px;
+  padding: 23px 24px;
+  border: 1px solid #2b3b51;
+  border-radius: 16px;
+  background: #151c28;
+  transition: border-color .25s ease, background .25s ease, transform .25s ease;
+}
+
+.community-post:hover {
+  border-color: #5475a6;
+  background: #182335;
+  transform: translateY(-2px);
+}
+
+.community-post-tag {
+  justify-self: start;
+  padding: 7px 10px;
+  border: 1px solid #3f5b84;
+  border-radius: 999px;
+  color: #9ec1ff;
+  font: 11px var(--app-font-mono);
+}
+
+.community-post-body h3 {
+  margin: 0;
+  color: #e7edf6;
+  font: 700 17px Manrope;
+  letter-spacing: -.04em;
+}
+
+.community-post-body span {
+  display: block;
+  margin-top: 7px;
+  color: #8491a5;
+  font-size: 11px;
+}
+
+.community-post-replies {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #9aa9bd;
+  font: 11px var(--app-font-mono);
+}
+
+.community-post-arrow {
+  color: #647d9f;
+}
+
+.community-lounge-section,
+.review-archive-section {
+  border-top: 1px solid #26364b;
+  background: #101722;
+}
+
+.community-lounge {
+  display: grid;
+  grid-template-columns: 1fr .9fr;
+  align-items: center;
+  gap: 72px;
+}
+
+.community-lounge-card {
+  min-height: 260px;
+  padding: 29px;
+  border: 1px solid #2b3b51;
+  border-radius: 24px;
+  background: #151c28;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.community-lounge-card h4 {
+  margin: 15px 0 0;
+  color: #f1f5f9;
+  font: 700 20px Manrope;
+}
+
+.review-page-hero {
+  background:
+    radial-gradient(circle at 78% 20%, rgb(232 187 81 / 0.13), transparent 32%),
+    radial-gradient(circle at 18% 90%, rgb(62 102 169 / 0.13), transparent 28%),
+    #101722;
+}
+
+.review-page-score {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 40px;
+}
+
+.review-page-score strong {
+  color: #f0c95f;
+  font: 800 52px Manrope;
+  letter-spacing: -.08em;
+}
+
+.review-page-score span {
+  color: #8491a5;
+  font-size: 11px;
+}
+
+.review-page-grid {
+  display: grid;
+  grid-template-columns: 1.05fr .95fr;
+  gap: 18px;
+  align-items: start;
+}
+
+.review-page-stream {
+  display: grid;
+  gap: 12px;
+}
+
+.review-page-card {
+  min-height: 142px;
+}
+
+.review-submit-card {
+  padding: 30px;
+  border: 1px solid #3a4a61;
+  border-radius: 24px;
+  background: #151c28;
+}
+
+.review-submit-card h3 {
+  margin: 16px 0 10px;
+  color: #f1f5f9;
+  font: 800 30px/1.1 Manrope;
+  letter-spacing: -.06em;
+}
+
+.review-submit-card > p {
+  margin: 0 0 25px;
+  color: #94a0b4;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.standalone-review-form {
+  gap: 12px;
+}
+
+.form-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.standalone-review-form select {
+  width: 100%;
+  margin-top: 7px;
+  padding: 12px 13px;
+  outline: none;
+  border: 1px solid #363b43;
+  background: #101318;
+  color: #efede6;
+}
+
+.standalone-review-form select:focus {
+  border-color: #d8ae47;
+}
+
+.review-story-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.review-story-card {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: 15px;
+  align-items: start;
+  padding: 23px 20px;
+  border: 1px solid #2b3b51;
+  border-radius: 16px;
+  background: #151c28;
+}
+
+.review-story-card .story-rank {
+  width: 52px;
+  height: 52px;
+  font-size: 15px;
+}
+
+.review-story-card h3 {
+  margin: 7px 0 14px;
+  color: #e7edf6;
+  font: 700 15px/1.45 Manrope;
+  letter-spacing: -.04em;
+}
+
+.review-story-card > strong {
+  grid-column: 2;
+  color: #f0c95f;
+  font: 700 12px var(--app-font-mono);
+}
+
+@media (max-width: 860px) {
+  .community-lounge,
+  .review-page-grid {
+    grid-template-columns: 1fr;
+    gap: 34px;
+  }
+
+  .review-story-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .community-post {
+    grid-template-columns: 125px minmax(0, 1fr) auto;
+  }
+
+  .community-post-arrow {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .standalone-hero {
+    padding: 76px 0 72px;
+  }
+
+  .standalone-title {
+    font-size: clamp(44px, 14vw, 66px);
+  }
+
+  .standalone-lede {
+    font-size: 14px;
+  }
+
+  .page-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .page-actions > * {
+    width: 100%;
+  }
+
+  .community-page-stats {
+    margin-top: 48px;
+  }
+
+  .community-page-stats div {
+    min-width: 0;
+    flex: 1;
+    padding-right: 12px;
+  }
+
+  .community-page-stats div:not(:first-child) {
+    padding-left: 12px;
+  }
+
+  .community-page-stats strong {
+    font-size: 26px;
+  }
+
+  .community-page-stats span {
+    font-size: 10px;
+  }
+
+  .community-post {
+    grid-template-columns: 1fr auto;
+    gap: 11px;
+    padding: 18px;
+  }
+
+  .community-post-tag {
+    grid-column: 1 / -1;
+  }
+
+  .community-post-body h3 {
+    font-size: 14px;
+  }
+
+  .community-lounge-card,
+  .review-submit-card {
+    padding: 22px;
+    border-radius: 18px;
+  }
+
+  .form-two-col {
+    grid-template-columns: 1fr;
+  }
+
+  .review-submit-card h3 {
+    font-size: 26px;
   }
 }

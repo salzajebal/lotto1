@@ -2,10 +2,14 @@ import { type FormEvent, type ReactNode, useEffect, useRef, useState } from 'rea
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   ArrowRight,
+  BadgeCheck,
   Check,
+  FlaskConical,
   Headphones,
+  Landmark,
   Menu,
   MessageCircle,
+  Trophy,
   Play,
   X,
 } from 'lucide-react';
@@ -14,7 +18,7 @@ import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
-import { Route, Switch, useLocation, Router as WouterRouter } from 'wouter';
+import { Link, Route, Switch, useLocation, Router as WouterRouter } from 'wouter';
 import AdminApp from '@/admin/AdminApp';
 
 const queryClient = new QueryClient();
@@ -144,10 +148,10 @@ function Home() {
             <span className="brand-text">로또 분석 번호<small>실제 당첨의 기쁨을 함께합니다</small></span>
           </a>
           <nav className={menuOpen ? 'nav mobile-open' : 'nav'} aria-label="주요 메뉴">
-            <a href="#proof" onClick={() => setMenuOpen(false)}>당첨 후기</a>
+            <Link href="/reviews" onClick={() => setMenuOpen(false)}>당첨 후기</Link>
             <a href="#video" onClick={() => setMenuOpen(false)}>당첨 영상</a>
             <a href="#membership" onClick={() => setMenuOpen(false)}>멤버십</a>
-            <a href="#community" onClick={() => setMenuOpen(false)}>커뮤니티</a>
+            <Link href="/community" onClick={() => setMenuOpen(false)}>커뮤니티</Link>
             <a href="#support" onClick={() => setMenuOpen(false)}>고객센터</a>
           </nav>
           <div className="top-actions">
@@ -200,9 +204,9 @@ function Home() {
               <button className="hero-quick-card quick-blue" onClick={() => openModal('support')}>
                 <Headphones className="quick-svg" /><strong>고객센터</strong><small>궁금한 점이 있으신가요?<br />언제든지 문의주세요.</small><b>문의하기</b>
               </button>
-              <a className="hero-quick-card quick-purple" href="#community">
+              <Link className="hero-quick-card quick-purple" href="/community">
                 <MessageCircle className="quick-svg" /><strong>커뮤니티</strong><small>당첨 후기 공유, 정보 교류<br />함께하는 로또 커뮤니티</small><b>바로가기</b>
-              </a>
+              </Link>
               <button className="hero-quick-card quick-membership" onClick={() => openModal('membership')}>
                 <strong>멤버십 분석 번호 서비스</strong>
                 <ul><li>전문가의 체계적인 번호 분석</li><li>매주 업데이트되는 최신 번호</li><li>높은 적중률을 목표로 한 차별화된 서비스</li></ul>
@@ -237,7 +241,7 @@ function Home() {
                   <div className="story-amount">{story.amount}</div>
                 </article>
               ))}
-              <button className="outline-button" style={{ marginTop: 22 }} onClick={() => openModal('review')}>후기 더 보기 <ArrowRight size={15} /></button>
+               <Link className="outline-button" style={{ marginTop: 22 }} href="/reviews">후기 더 보기 <ArrowRight size={15} /></Link>
             </div>
           </div>
         </section>
@@ -309,7 +313,7 @@ function Home() {
                 <h3>이번 주 가장 오래 고민한 숫자는?</h3>
                 <p>회원들이 고른 기준과 조합을 자유롭게 공유하고, 분석팀의 코멘트를 확인하세요.</p>
                 <div className="community-tags"><span>최근 출현 흐름</span><span>나만의 제외수</span><span>당첨 후기</span></div>
-                <a className="outline-button" href="#membership">커뮤니티 둘러보기 <ArrowRight size={15} /></a>
+                <Link className="outline-button" href="/community">커뮤니티 둘러보기 <ArrowRight size={15} /></Link>
               </article>
               <article className="community-side reveal delay-1">
                 <div className="community-side-top"><div><span className="mono muted">MEMBER LOUNGE</span><h4>지금 함께 보는 회원</h4></div><span className="online">ONLINE 32</span></div>
@@ -333,10 +337,30 @@ function Home() {
           <div className="shell">
             <div className="trust-intro reveal"><div><span className="eyebrow">Trust, not noise</span><h2 className="section-title">확인할 수 있는<br /><span className="gold">신뢰의 표식.</span></h2></div><p>배지는 교체 가능한 영역으로 운영됩니다.<br />서비스의 최신 인증과 수상 이력을 투명하게 공개합니다.</p></div>
             <div className="badges reveal delay-1">
-              <div className="badge"><div><div className="badge-mark">R&amp;D</div><strong>한국연구업적통합정보시스템</strong><span>등록 연구·분석 기관</span></div></div>
-              <div className="badge"><div><div className="badge-mark">1st</div><strong>고객만족 1위</strong><span>서비스 부문</span></div></div>
-              <div className="badge"><div><div className="badge-mark">CSI</div><strong>소비자만족지수 1위</strong><span>분석 서비스 부문</span></div></div>
-              <div className="badge"><div><div className="badge-mark">PAT</div><strong>특허증</strong><span>데이터 분석 방법론</span></div></div>
+              <div className="badge">
+                <div className="badge-content">
+                  <div className="badge-mark" aria-hidden="true"><FlaskConical size={21} strokeWidth={1.7} /></div>
+                  <strong>연구·분석</strong><span>데이터 연구센터</span>
+                </div>
+              </div>
+              <div className="badge">
+                <div className="badge-content">
+                  <div className="badge-mark" aria-hidden="true"><Trophy size={21} strokeWidth={1.7} /></div>
+                  <strong>고객 만족</strong><span>서비스 품질 관리</span>
+                </div>
+              </div>
+              <div className="badge">
+                <div className="badge-content">
+                  <div className="badge-mark" aria-hidden="true"><BadgeCheck size={21} strokeWidth={1.7} /></div>
+                  <strong>소비자 보호</strong><span>투명한 상담 운영</span>
+                </div>
+              </div>
+              <div className="badge">
+                <div className="badge-content">
+                  <div className="badge-mark" aria-hidden="true"><Landmark size={21} strokeWidth={1.7} /></div>
+                  <strong>지식재산 관리</strong><span>분석 방법론 연구</span>
+                </div>
+              </div>
             </div>
             <div className="support-strip reveal delay-2" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20, marginTop: 52, padding: '28px 0 0', borderTop: '1px solid #30343a' }}>
               <div><span className="eyebrow">Customer care</span><h3 style={{ margin: '12px 0 0', font: '700 22px Manrope', letterSpacing: '-.05em' }}>궁금한 점은 카카오톡으로 편하게 물어보세요.</h3></div>
@@ -350,7 +374,7 @@ function Home() {
         <div className="shell">
           <div className="footer-top">
             <a className="brand" href="#top"><span className="brand-mark" /><span className="brand-text">GOLDEN PICK<small>LOTTO ANALYSIS LAB</small></span></a>
-            <div className="footer-nav"><div><strong>EXPLORE</strong><a href="#proof">당첨 후기</a><a href="#video">당첨 영상</a><a href="#community">커뮤니티</a></div><div><strong>HELP</strong><a href="#membership">멤버십</a><button style={{ display: 'block', padding: 0, marginBottom: 10, border: 0, background: 'transparent', color: '#777e87', fontSize: 12 }} onClick={() => openModal('support')}>고객센터</button><button style={{ display: 'block', padding: 0, border: 0, background: 'transparent', color: '#777e87', fontSize: 12 }} onClick={() => openModal('auth')}>로그인</button></div></div>
+             <div className="footer-nav"><div><strong>EXPLORE</strong><Link href="/reviews">당첨 후기</Link><a href="#video">당첨 영상</a><Link href="/community">커뮤니티</Link></div><div><strong>HELP</strong><a href="#membership">멤버십</a><button style={{ display: 'block', padding: 0, marginBottom: 10, border: 0, background: 'transparent', color: '#777e87', fontSize: 12 }} onClick={() => openModal('support')}>고객센터</button><button style={{ display: 'block', padding: 0, border: 0, background: 'transparent', color: '#777e87', fontSize: 12 }} onClick={() => openModal('auth')}>로그인</button></div></div>
             <div className="footer-call"><strong>카카오톡 채널 상담</strong><span>대표번호 없이, 카카오톡으로만 상담합니다.</span><a href="https://pf.kakao.com/" target="_blank" rel="noreferrer" className="gold" style={{ display: 'inline-block', marginTop: 13, fontSize: 12 }}>채널 바로가기 <ArrowRight size={12} style={{ verticalAlign: 'middle' }} /></a></div>
           </div>
           <div className="footer-bottom"><span>© 2025 GOLDEN PICK. ALL RIGHTS RESERVED.</span><span>이용약관　개인정보처리방침</span></div>
@@ -366,8 +390,211 @@ function Home() {
   );
 }
 
+const communityPosts = [
+  { tag: '번호 흐름', title: '최근 10회에서 자주 바뀐 구간을 어떻게 보시나요?', meta: '분석팀 코멘트 · 12분 전', replies: '24' },
+  { tag: '나만의 제외수', title: '이번 주에는 이 숫자를 제외해 보려고 합니다', meta: '회원 김○○ · 38분 전', replies: '16' },
+  { tag: '조합 밸런스', title: '홀짝 3:3 조합, 실제로 오래 살아남을까요?', meta: '회원 박○○ · 1시간 전', replies: '31' },
+  { tag: '당첨 후기', title: '1184회 3등 당첨, 분석 리포트에서 도움받은 부분', meta: '회원 이○○ · 어제', replies: '48' },
+];
+
+function PublicPageHeader() {
+  const [menuOpen, setMenuOpen] = useState(false);
+  return (
+    <header className="topbar lotto-topbar standalone-topbar">
+      <div className="shell topbar-inner">
+        <Link className="brand lotto-brand" href="/" onClick={() => setMenuOpen(false)} aria-label="로또 분석 번호 홈">
+          <span className="clover-mark" aria-hidden="true"><i /><i /><i /><i /></span>
+          <span className="brand-text">로또 분석 번호<small>실제 당첨의 기쁨을 함께합니다</small></span>
+        </Link>
+        <nav className={menuOpen ? 'nav mobile-open' : 'nav'} aria-label="주요 메뉴">
+          <Link href="/reviews" onClick={() => setMenuOpen(false)}>당첨 후기</Link>
+          <Link href="/#video" onClick={() => setMenuOpen(false)}>당첨 영상</Link>
+          <Link href="/#membership" onClick={() => setMenuOpen(false)}>멤버십</Link>
+          <Link href="/community" onClick={() => setMenuOpen(false)}>커뮤니티</Link>
+          <Link href="/#support" onClick={() => setMenuOpen(false)}>고객센터</Link>
+        </nav>
+        <div className="top-actions">
+          <Link className="login-button standalone-login" href="/#top">홈으로</Link>
+          <button className="mobile-menu" aria-label="메뉴 열기" onClick={() => setMenuOpen((current) => !current)}><Menu size={21} /></button>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+function PublicPageFooter() {
+  return (
+    <footer className="footer">
+      <div className="shell">
+        <div className="footer-top">
+          <Link className="brand" href="/"><span className="brand-mark" /><span className="brand-text">GOLDEN PICK<small>LOTTO ANALYSIS LAB</small></span></Link>
+          <div className="footer-nav">
+            <div><strong>EXPLORE</strong><Link href="/reviews">당첨 후기</Link><Link href="/community">커뮤니티</Link><Link href="/#membership">멤버십</Link></div>
+            <div><strong>HELP</strong><Link href="/#support">고객센터</Link><Link href="/#top">홈페이지</Link></div>
+          </div>
+          <div className="footer-call"><strong>카카오톡 채널 상담</strong><span>대표번호 없이, 카카오톡으로만 상담합니다.</span><a href="https://pf.kakao.com/" target="_blank" rel="noreferrer" className="gold" style={{ display: 'inline-block', marginTop: 13, fontSize: 12 }}>채널 바로가기 <ArrowRight size={12} style={{ verticalAlign: 'middle' }} /></a></div>
+        </div>
+        <div className="footer-bottom"><span>© 2025 GOLDEN PICK. ALL RIGHTS RESERVED.</span><span>이용약관　개인정보처리방침</span></div>
+      </div>
+    </footer>
+  );
+}
+
+function CommunityPage() {
+  return (
+    <div className="lotto-app standalone-page">
+      <PublicPageHeader />
+      <main>
+        <section className="standalone-hero">
+          <div className="shell">
+            <span className="eyebrow">Inside the circle</span>
+            <h1 className="standalone-title">숫자를 나누면,<br /><span className="gold">기준이 생깁니다.</span></h1>
+            <p className="standalone-lede">혼자 결과를 기다리는 대신, 함께 기록하고 서로의 기준을 확인하는 회원 커뮤니티입니다.</p>
+            <div className="page-actions">
+              <Link className="gold-button" href="/#membership">멤버십 안내 <ArrowRight size={16} /></Link>
+              <Link className="outline-button" href="/reviews">당첨 후기 보기 <ArrowRight size={15} /></Link>
+            </div>
+            <div className="community-page-stats">
+              <div><strong>32</strong><span>지금 함께 보는 회원</span></div>
+              <div><strong>07</strong><span>이번 주 열린 토론</span></div>
+              <div><strong>247</strong><span>검증 가능한 후기</span></div>
+            </div>
+          </div>
+        </section>
+        <section className="section page-section" id="topics">
+          <div className="shell">
+            <div className="section-head">
+              <div><span className="eyebrow">Open discussion</span><h2 className="section-title">이번 주 회원들이<br /><span className="gold">함께 보는 이야기.</span></h2></div>
+              <p className="section-copy">출현 흐름부터 나만의 제외수까지, 각자의 기준을 공유하고 분석팀의 코멘트를 확인하세요.</p>
+            </div>
+            <div className="community-post-list">
+              {communityPosts.map((post) => (
+                <article className="community-post" key={post.title}>
+                  <div className="community-post-tag">{post.tag}</div>
+                  <div className="community-post-body"><h3>{post.title}</h3><span>{post.meta}</span></div>
+                  <div className="community-post-replies"><MessageCircle size={15} />{post.replies}</div>
+                  <ArrowRight className="community-post-arrow" size={18} />
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+        <section className="section community-lounge-section">
+          <div className="shell community-lounge">
+            <div>
+              <span className="eyebrow">Member lounge</span>
+              <h2 className="section-title">이번 주 분석을<br /><span className="gold">함께 복기하세요.</span></h2>
+              <p className="section-copy">멤버십 가입 후 커뮤니티에서 회차별 분석 리포트와 회원들의 조합을 함께 확인할 수 있습니다.</p>
+            </div>
+            <div className="community-lounge-card">
+              <div className="community-side-top"><div><span className="mono muted">ONLINE NOW</span><h4>지금 함께 보는 회원</h4></div><span className="online">ONLINE 32</span></div>
+              <div><div className="avatars"><span className="avatar">MJ</span><span className="avatar">SY</span><span className="avatar">JK</span><span className="avatar">HN</span><span className="avatar">+28</span></div><small>이번 주 분석을 함께 복기하고 있습니다.</small></div>
+            </div>
+          </div>
+        </section>
+      </main>
+      <PublicPageFooter />
+    </div>
+  );
+}
+
+function ReviewSubmissionForm() {
+  const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  const submitReview = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    setSubmitting(true);
+    setError('');
+    try {
+      const response = await fetch('/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          memberName: String(data.get('memberName') || ''),
+          drawNumber: Number(data.get('drawNumber') || 0),
+          rank: String(data.get('rank') || '3등'),
+          amount: Number(data.get('amount') || 0),
+          content: String(data.get('content') || ''),
+        }),
+      });
+      if (!response.ok) throw new Error('후기 접수에 실패했습니다. 입력 내용을 확인해주세요.');
+      setSubmitted(true);
+      event.currentTarget.reset();
+    } catch (submissionError) {
+      setError(submissionError instanceof Error ? submissionError.message : '후기 접수에 실패했습니다.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (submitted) return <div className="success-note">후기가 접수되었습니다. 검토 후 당첨 아카이브에 반영됩니다.</div>;
+
+  return (
+    <form className="form standalone-review-form" onSubmit={submitReview}>
+      <div className="form-two-col">
+        <label>닉네임<input name="memberName" required placeholder="공개할 이름" /></label>
+        <label>당첨 회차<input name="drawNumber" required type="number" min="1" max="9999" placeholder="예: 1184" /></label>
+      </div>
+      <div className="form-two-col">
+        <label>당첨 등수<select name="rank" defaultValue="3등"><option>1등</option><option>2등</option><option>3등</option><option>4등</option><option>5등</option></select></label>
+        <label>당첨금액<input name="amount" type="number" min="0" placeholder="선택 입력" /></label>
+      </div>
+      <label>후기 내용<textarea name="content" required placeholder="분석을 시작한 계기와 경험을 들려주세요." /></label>
+      {error && <div className="form-error">{error}</div>}
+      <button className="gold-button" type="submit" disabled={submitting}>{submitting ? '접수 중...' : '후기 제출하기'} <ArrowRight size={15} /></button>
+    </form>
+  );
+}
+
+function ReviewsPage() {
+  return (
+    <div className="lotto-app standalone-page">
+      <PublicPageHeader />
+      <main>
+        <section className="standalone-hero review-page-hero">
+          <div className="shell">
+            <span className="eyebrow">Member voices</span>
+            <h1 className="standalone-title">실제로 써본<br /><span className="gold">사람들의 말.</span></h1>
+            <p className="standalone-lede">좋은 결과만 골라 보여주지 않습니다. 멤버십을 경험한 분들의 솔직한 기록을 모았습니다.</p>
+            <div className="review-page-score"><strong>4.8</strong><div><div className="stars" aria-label="별점 5점 중 4.8점">★★★★★</div><span>회원 만족도 / 2024–2025</span></div></div>
+          </div>
+        </section>
+        <section className="section page-section">
+          <div className="shell">
+            <div className="section-head">
+              <div><span className="eyebrow">Verified archive</span><h2 className="section-title">회원이 직접 남긴<br /><span className="gold">경험의 기록.</span></h2></div>
+              <p className="section-copy">회차와 등수, 회원의 목소리를 함께 확인하세요. 모든 후기는 검토 후 공개됩니다.</p>
+            </div>
+            <div className="review-page-grid">
+              <div className="review-page-stream">
+                {reviews.map((review) => <article className="review-card review-page-card" key={review.name}><div className="review-top"><span>{review.name}</span><span>{review.meta}</span></div><blockquote>“{review.text}”</blockquote></article>)}
+              </div>
+              <div className="review-submit-card">
+                <span className="mono gold">SHARE YOUR STORY</span>
+                <h3>나의 당첨 후기도<br />남겨주세요.</h3>
+                <p>회원님의 기록이 다음 사람에게는 가장 현실적인 기준이 됩니다.</p>
+                <ReviewSubmissionForm />
+              </div>
+            </div>
+          </div>
+        </section>
+        <section className="section review-archive-section">
+          <div className="shell">
+            <div className="section-head"><div><span className="eyebrow">Winning archive</span><h2 className="section-title">회차별 당첨<br /><span className="gold">기록을 확인하세요.</span></h2></div><Link className="outline-button" href="/community">커뮤니티 보기 <ArrowRight size={15} /></Link></div>
+            <div className="review-story-grid">{stories.map((story) => <article className="review-story-card" key={story.date}><span className="story-rank">{story.rank}</span><div><span className="story-meta">{story.date}</span><h3>{story.title}</h3></div><strong>{story.amount}</strong></article>)}</div>
+          </div>
+        </section>
+      </main>
+      <PublicPageFooter />
+    </div>
+  );
+}
+
 function Router() {
-  return <RoutedErrorBoundary><Switch><Route path="/" component={Home} /><Route path="/admin" component={AdminApp} /><Route component={NotFound} /></Switch></RoutedErrorBoundary>;
+  return <RoutedErrorBoundary><Switch><Route path="/" component={Home} /><Route path="/community" component={CommunityPage} /><Route path="/reviews" component={ReviewsPage} /><Route path="/admin" component={AdminApp} /><Route component={NotFound} /></Switch></RoutedErrorBoundary>;
 }
 
 function RoutedErrorBoundary({ children }: { children: ReactNode }) {

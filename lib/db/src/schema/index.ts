@@ -51,6 +51,7 @@ export const membersTable = pgTable("members", {
   status: text("status").notNull().default("active"),
   assignedStaffId: integer("assigned_staff_id").references(() => adminUsersTable.id, { onDelete: "set null" }),
   source: text("source").notNull().default("direct"),
+  paymentAmount: integer("payment_amount").notNull().default(0),
   monthlyRevenue: integer("monthly_revenue").notNull().default(0),
   notes: text("notes").notNull().default(""),
   ...timestamps,

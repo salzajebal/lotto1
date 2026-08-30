@@ -334,6 +334,7 @@ router.post("/admin/members", async (req, res): Promise<void> => {
     gradeId: z.number().int().nullable().optional(),
     status: z.string().default("active"),
     assignedStaffId: z.number().int().nullable().optional(),
+    paymentAmount: z.number().int().nonnegative().default(0),
     monthlyRevenue: z.number().int().nonnegative().default(0),
     notes: z.string().default(""),
   }), req.body, res);
@@ -363,6 +364,7 @@ router.patch("/admin/members/:id", async (req, res): Promise<void> => {
     gradeId: z.number().int().nullable().optional(),
     status: z.string().optional(),
     assignedStaffId: z.number().int().nullable().optional(),
+    paymentAmount: z.number().int().nonnegative().optional(),
     monthlyRevenue: z.number().int().nonnegative().optional(),
     notes: z.string().optional(),
   }), req.body, res);
