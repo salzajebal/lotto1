@@ -134,7 +134,10 @@ export function useUpdateStaff() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: number, data: any }) => fetcher(`${API_BASE}/staff/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['adminStaff'] })
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminStaff'] });
+      queryClient.invalidateQueries({ queryKey: ['adminAuthStatus'] });
+    }
   });
 }
 

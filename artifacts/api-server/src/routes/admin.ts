@@ -22,6 +22,7 @@ import {
 type SessionUser = {
   id: number;
   name: string;
+  username: string;
   email: string;
   role: string;
 };
@@ -52,6 +53,7 @@ const int = (value: unknown, fallback = 0) => {
 const publicAdmin = (user: typeof adminUsersTable.$inferSelect): SessionUser => ({
   id: user.id,
   name: user.name,
+  username: user.username,
   email: user.email,
   role: user.role,
 });
@@ -98,6 +100,7 @@ async function getUserFromRequest(req: Request): Promise<SessionUser | null> {
       adminId: adminSessionsTable.adminId,
       expiresAt: adminSessionsTable.expiresAt,
       name: adminUsersTable.name,
+      username: adminUsersTable.username,
       email: adminUsersTable.email,
       role: adminUsersTable.role,
       active: adminUsersTable.active,
@@ -107,7 +110,7 @@ async function getUserFromRequest(req: Request): Promise<SessionUser | null> {
     .where(eq(adminSessionsTable.tokenHash, hash(token)))
     .limit(1);
   if (!session || !session.active || session.expiresAt < new Date()) return null;
-  return { id: session.adminId, name: session.name, email: session.email, role: session.role };
+  return { id: session.adminId, name: session.name, username: session.username, email: session.email, role: session.role };
 }
 
 const requireAdmin = async (req: Request, res: Response, next: NextFunction) => {
@@ -212,6 +215,10 @@ router.use(cookieParser());
 
 const adminAccountSchema = z.object({
   name: z.string().trim().min(2, "이름은 2자 이상 입력해주세요."),
+  username: z.string().trim().min(3, "아이디는 3자 이상 입력해주세요.").max(32, "아이디는 32자 이내로 입력해주세요.").regex(
+    /^[A-Za-z0-9._-]+$/,
+    "아이디는 영문, 숫자, 마침표, 밑줄, 하이픈만 사용할 수 있습니다.",
+  ),
   email: z.string().trim().email("올바른 이메일을 입력해주세요."),
   password: z.string().min(8, "비밀번호는 8자 이상 입력해주세요."),
 });
@@ -232,7 +239,13 @@ router.post("/admin/auth/bootstrap", async (req, res): Promise<void> => {
     if ((count?.count ?? 0) > 0) return null;
     const [created] = await tx
       .insert(adminUsersTable)
-      .values({ name: body.name, email: body.email.toLowerCase(), passwordHash: hashPassword(body.password), role: "owner" })
+        .values({
+          name: body.name,
+          username: body.username.toLowerCase(),
+          email: body.email.toLowerCase(),
+          passwordHash: hashPassword(body.password),
+          role: "owner",
+        })
       .returning();
     await tx.insert(adminSessionsTable).values({
       adminId: created.id,
@@ -260,23 +273,23 @@ router.post("/admin/auth/bootstrap", async (req, res): Promise<void> => {
 });
 
 router.post("/admin/auth/login", async (req, res): Promise<void> => {
-  const body = parse(adminAccountSchema.pick({ email: true, password: true }), req.body, res);
+  const body = parse(adminAccountSchema.pick({ username: true, password: true }), req.body, res);
   if (!body) return;
-  const email = body.email.toLowerCase();
-  const attemptKey = `${req.ip || "unknown"}:${email}`;
+  const username = body.username.toLowerCase();
+  const attemptKey = `${req.ip || "unknown"}:${username}`;
   const now = Date.now();
   const attempt = loginAttempts.get(attemptKey);
   if (attempt && attempt.resetAt > now && attempt.count >= 5) {
     res.status(429).json({ error: "로그인 시도가 너무 많습니다. 15분 후 다시 시도해주세요." });
     return;
   }
-  const [user] = await db.select().from(adminUsersTable).where(eq(adminUsersTable.email, email)).limit(1);
+  const [user] = await db.select().from(adminUsersTable).where(eq(adminUsersTable.username, username)).limit(1);
   if (!user || !user.active || !verifyPassword(body.password, user.passwordHash)) {
     loginAttempts.set(attemptKey, {
       count: attempt && attempt.resetAt > now ? attempt.count + 1 : 1,
       resetAt: attempt && attempt.resetAt > now ? attempt.resetAt : now + 15 * 60 * 1000,
     });
-    res.status(401).json({ error: "이메일 또는 비밀번호가 올바르지 않습니다." });
+    res.status(401).json({ error: "아이디 또는 비밀번호가 올바르지 않습니다." });
     return;
   }
   loginAttempts.delete(attemptKey);
@@ -305,15 +318,24 @@ router.get("/admin/me", (req, res) => res.json({ user: req.adminUser }));
 router.patch("/admin/me", async (req, res): Promise<void> => {
   const body = parse(z.object({
     name: z.string().trim().min(2).optional(),
+    username: adminAccountSchema.shape.username.optional(),
     password: z.string().min(8).optional(),
   }), req.body, res);
   if (!body) return;
-  const [user] = await db.update(adminUsersTable).set({
-    ...(body.name ? { name: body.name } : {}),
-    ...(body.password ? { passwordHash: hashPassword(body.password) } : {}),
-    updatedAt: new Date(),
-  }).where(eq(adminUsersTable.id, req.adminUser!.id)).returning();
+  const user = await db.transaction(async (tx) => {
+    const [updated] = await tx.update(adminUsersTable).set({
+      ...(body.name ? { name: body.name } : {}),
+      ...(body.username ? { username: body.username.toLowerCase() } : {}),
+      ...(body.password ? { passwordHash: hashPassword(body.password) } : {}),
+      updatedAt: new Date(),
+    }).where(eq(adminUsersTable.id, req.adminUser!.id)).returning();
+    if (body.password) {
+      await tx.delete(adminSessionsTable).where(eq(adminSessionsTable.adminId, req.adminUser!.id));
+    }
+    return updated;
+  });
   await recordEvent(req, "update", "admin_profile", user.id);
+  if (body.password) res.clearCookie(SESSION_COOKIE);
   res.json({ user: publicAdmin(user) });
 });
 
@@ -351,7 +373,7 @@ router.get("/admin/dashboard", async (req, res): Promise<void> => {
     db.select({ count: sql<number>`count(*)::int` }).from(winningReviewsTable).where(eq(winningReviewsTable.status, "published")),
     db.select({ count: sql<number>`count(*)::int` }).from(supportInquiriesTable).where(inquiryFilter),
     db.select({ total: sql<number>`coalesce(sum(${membersTable.monthlyRevenue}), 0)::int` }).from(membersTable).where(staffFilter),
-    db.select({ id: adminUsersTable.id, name: adminUsersTable.name, role: adminUsersTable.role, active: adminUsersTable.active }).from(adminUsersTable).orderBy(desc(adminUsersTable.createdAt)).limit(5),
+    db.select({ id: adminUsersTable.id, name: adminUsersTable.name, username: adminUsersTable.username, role: adminUsersTable.role, active: adminUsersTable.active }).from(adminUsersTable).orderBy(desc(adminUsersTable.createdAt)).limit(5),
     db.select().from(supportInquiriesTable)
       .where(isOwner(req) ? undefined : eq(supportInquiriesTable.assignedStaffId, req.adminUser!.id))
       .orderBy(desc(supportInquiriesTable.createdAt)).limit(5),
@@ -457,6 +479,7 @@ router.get("/admin/staff", async (req, res): Promise<void> => {
     const staff = await db.select({
       id: adminUsersTable.id,
       name: adminUsersTable.name,
+      username: adminUsersTable.username,
       role: adminUsersTable.role,
       active: adminUsersTable.active,
       memberCount: sql<number>`(select count(*)::int from members where assigned_staff_id = ${adminUsersTable.id})`,
@@ -468,6 +491,7 @@ router.get("/admin/staff", async (req, res): Promise<void> => {
   const staff = await db.select({
     id: adminUsersTable.id,
     name: adminUsersTable.name,
+    username: adminUsersTable.username,
     email: adminUsersTable.email,
     role: adminUsersTable.role,
     active: adminUsersTable.active,
@@ -483,6 +507,7 @@ router.post("/admin/staff", requireOwner, async (req, res): Promise<void> => {
   if (!body) return;
   const [staff] = await db.insert(adminUsersTable).values({
     name: body.name,
+    username: body.username.toLowerCase(),
     email: body.email.toLowerCase(),
     passwordHash: hashPassword(body.password),
     role: body.role,
@@ -495,6 +520,7 @@ router.patch("/admin/staff/:id", requireOwner, async (req, res): Promise<void> =
   const id = int(req.params.id);
   const body = parse(z.object({
     name: z.string().trim().min(2).optional(),
+    username: adminAccountSchema.shape.username.optional(),
     role: z.enum(["owner", "staff"]).optional(),
     active: z.boolean().optional(),
     password: z.string().min(8).optional(),
@@ -517,11 +543,15 @@ router.patch("/admin/staff/:id", requireOwner, async (req, res): Promise<void> =
     }
     const [updated] = await tx.update(adminUsersTable).set({
       ...(body.name ? { name: body.name } : {}),
+      ...(body.username ? { username: body.username.toLowerCase() } : {}),
       ...(body.role ? { role: body.role } : {}),
       ...(body.active !== undefined ? { active: body.active } : {}),
       ...(body.password ? { passwordHash: hashPassword(body.password) } : {}),
       updatedAt: new Date(),
     }).where(eq(adminUsersTable.id, id)).returning();
+    if (body.password) {
+      await tx.delete(adminSessionsTable).where(eq(adminSessionsTable.adminId, id));
+    }
     return { status: "ok" as const, staff: updated };
   });
   if (result.status === "last_owner") {
@@ -534,6 +564,7 @@ router.patch("/admin/staff/:id", requireOwner, async (req, res): Promise<void> =
     return;
   }
   await recordEvent(req, "update", "staff", id);
+  if (body.password && id === req.adminUser!.id) res.clearCookie(SESSION_COOKIE);
   res.json(publicAdmin(staff));
 });
 

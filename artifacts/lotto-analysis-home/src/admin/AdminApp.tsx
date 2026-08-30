@@ -16,6 +16,7 @@ import CommunityView from './views/CommunityView';
 
 function AuthScreen({ needsBootstrap }: { needsBootstrap: boolean }) {
   const [name, setName] = useState('');
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   
@@ -25,9 +26,9 @@ function AuthScreen({ needsBootstrap }: { needsBootstrap: boolean }) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (needsBootstrap) {
-      bootstrap.mutate({ name, email, password });
+      bootstrap.mutate({ name, username, email, password });
     } else {
-      login.mutate({ email, password });
+      login.mutate({ username, password });
     }
   };
 
@@ -55,12 +56,18 @@ function AuthScreen({ needsBootstrap }: { needsBootstrap: boolean }) {
             </div>
           )}
           <div>
-            <Label>이메일</Label>
-            <Input required type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="admin@lottorico.com" />
+            <Label>아이디</Label>
+            <Input required minLength={3} value={username} onChange={e => setUsername(e.target.value)} placeholder="admin" autoComplete="username" />
           </div>
+          {needsBootstrap && (
+            <div>
+              <Label>이메일</Label>
+              <Input required type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="admin@lottorico.com" autoComplete="email" />
+            </div>
+          )}
           <div>
             <Label>비밀번호</Label>
-            <Input required type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" />
+            <Input required type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" autoComplete="current-password" />
           </div>
           <Button type="submit" className="w-full mt-2" disabled={login.isPending || bootstrap.isPending}>
             {(login.isPending || bootstrap.isPending) ? <Loader2 size={16} className="animate-spin" /> : (needsBootstrap ? '계정 생성' : '로그인')}
@@ -95,7 +102,7 @@ function AdminLayout({ user }: { user: any }) {
       <aside className="w-full md:w-64 flex-shrink-0 bg-[var(--ad-panel)] border-r border-[var(--ad-border)] flex flex-col">
         <div className="p-5 border-b border-[var(--ad-border)] flex items-center gap-3">
           <div className="w-8 h-8 border border-[var(--ad-gold)] rotate-45 flex items-center justify-center bg-[var(--ad-gold-bg)]">
-            <span className="-rotate-45 text-[var(--ad-gold)] font-bold text-sm">7</span>
+            <span className="-rotate-45 text-[var(--ad-gold)] font-bold text-sm">R</span>
           </div>
           <div>
             <h2 className="font-bold text-sm tracking-tight text-white">로또리코</h2>

@@ -12,17 +12,17 @@ export default function StaffView({ user }: { user: any }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   
-  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'staff', active: true });
+  const [form, setForm] = useState({ name: '', username: '', email: '', password: '', role: 'staff', active: true });
 
   const isOwner = user?.role === 'owner';
 
   const openModal = (staff?: any) => {
     if (staff) {
       setEditingId(staff.id);
-      setForm({ name: staff.name, email: staff.email, password: '', role: staff.role, active: staff.active });
+      setForm({ name: staff.name, username: staff.username, email: staff.email, password: '', role: staff.role, active: staff.active });
     } else {
       setEditingId(null);
-      setForm({ name: '', email: '', password: '', role: 'staff', active: true });
+      setForm({ name: '', username: '', email: '', password: '', role: 'staff', active: true });
     }
     setModalOpen(true);
   };
@@ -30,11 +30,15 @@ export default function StaffView({ user }: { user: any }) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (editingId) {
-      const payload: any = { name: form.name, role: form.role, active: form.active };
+      const payload: any = { name: form.name, username: form.username };
+      if (editingId !== user.id) {
+        payload.role = form.role;
+        payload.active = form.active;
+      }
       if (form.password) payload.password = form.password;
       updateStaff.mutate({ id: editingId, data: payload }, { onSuccess: () => setModalOpen(false) });
     } else {
-      createStaff.mutate({ name: form.name, email: form.email, password: form.password, role: form.role }, { onSuccess: () => setModalOpen(false) });
+      createStaff.mutate({ name: form.name, username: form.username, email: form.email, password: form.password, role: form.role }, { onSuccess: () => setModalOpen(false) });
     }
   };
 
@@ -66,7 +70,8 @@ export default function StaffView({ user }: { user: any }) {
           <thead>
             <tr>
               <Th>이름</Th>
-              <Th>이메일 (계정)</Th>
+              <Th>아이디</Th>
+              <Th>이메일 (연락처)</Th>
               <Th>권한</Th>
               <Th>배정된 회원수</Th>
               <Th>진행중 문의</Th>
@@ -84,7 +89,8 @@ export default function StaffView({ user }: { user: any }) {
                   </div>
                   {s.name}
                 </Td>
-                <Td>{s.email}</Td>
+                <Td>{s.username}</Td>
+                <Td>{s.email || '-'}</Td>
                 <Td><Badge variant={s.role === 'owner' ? 'warning' : 'info'}>{s.role}</Badge></Td>
                 <Td className="font-mono">{s.memberCount}</Td>
                 <Td className="font-mono">{s.inquiryCount}</Td>
@@ -114,6 +120,10 @@ export default function StaffView({ user }: { user: any }) {
                 <Input required type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} />
               </div>
             )}
+            <div>
+              <Label>아이디 *</Label>
+              <Input required minLength={3} value={form.username} onChange={e => setForm({...form, username: e.target.value})} autoComplete="username" />
+            </div>
             <div>
               <Label>{editingId ? '새 비밀번호 (변경시에만 입력)' : '초기 비밀번호 *'}</Label>
               <Input type="password" required={!editingId} minLength={8} value={form.password} onChange={e => setForm({...form, password: e.target.value})} />

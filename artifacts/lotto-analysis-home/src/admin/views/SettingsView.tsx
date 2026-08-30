@@ -3,7 +3,7 @@ import { ExternalLink, KeyRound, MessageCircle, ShieldCheck, UserRound } from 'l
 import { useAdminSiteSettings, useUpdateAdminProfile, useUpdateSiteSettings } from '../api';
 import { Button, Card, Input, Label } from '../components/UI';
 
-export default function SettingsView({ user }: { user: { name: string; email: string; role: string } }) {
+export default function SettingsView({ user }: { user: { name: string; username: string; email: string; role: string } }) {
   const [name, setName] = useState(user.name);
   const [password, setPassword] = useState('');
   const [kakaoChannelUrl, setKakaoChannelUrl] = useState('');
@@ -46,6 +46,7 @@ export default function SettingsView({ user }: { user: { name: string; email: st
               <span className="w-10 h-10 grid place-items-center rounded-md bg-[var(--ad-gold-bg)] text-[var(--ad-gold)]"><UserRound size={19} /></span>
               <div>
                 <h2 className="font-bold text-white">관리자 계정</h2>
+                <p className="text-xs text-[var(--ad-muted)]">아이디: {user.username}</p>
                 <p className="text-xs text-[var(--ad-muted)]">{user.email}</p>
               </div>
             </div>
