@@ -4,7 +4,6 @@ import {
   ArrowRight,
   BadgeCheck,
   Check,
-  FlaskConical,
   Headphones,
   Landmark,
   Menu,
@@ -22,6 +21,7 @@ import { Link, Route, Switch, useLocation, Router as WouterRouter } from 'wouter
 import AdminApp from '@/admin/AdminApp';
 
 const queryClient = new QueryClient();
+const customerSatisfactionBadge = `${import.meta.env.BASE_URL}customer-satisfaction-no-bg.png`;
 
 type ModalName = 'review' | 'support' | 'auth' | 'membership' | 'video' | null;
 
@@ -47,6 +47,11 @@ type PublicCommunityPost = {
   updatedAt: string;
 };
 
+type PublicSiteSettings = {
+  kakaoChannelUrl: string;
+  kakaoButtonLabel: string;
+};
+
 async function fetchPublicData<T>(url: string): Promise<T> {
   const response = await fetch(url);
   if (!response.ok) throw new Error('공개 콘텐츠를 불러오지 못했습니다.');
@@ -66,6 +71,14 @@ function usePublishedCommunityPosts() {
     queryKey: ['publishedCommunityPosts'],
     queryFn: () => fetchPublicData<PublicCommunityPost[]>('/api/community-posts'),
     staleTime: 15_000,
+  });
+}
+
+function usePublicSiteSettings() {
+  return useQuery({
+    queryKey: ['publicSiteSettings'],
+    queryFn: () => fetchPublicData<PublicSiteSettings>('/api/site-settings'),
+    staleTime: 60_000,
   });
 }
 
@@ -92,6 +105,66 @@ function Modal({
         <p>{description}</p>
         {children}
       </section>
+    </div>
+  );
+}
+
+function KakaoChannelAction({
+  className = '',
+  children,
+  icon = <MessageCircle size={15} />,
+}: {
+  className?: string;
+  children?: ReactNode;
+  icon?: ReactNode;
+}) {
+  const { data, isLoading, isError } = usePublicSiteSettings();
+  const label = children ?? data?.kakaoButtonLabel ?? '카카오톡 채널 상담';
+  const classes = className ? `kakao-channel-action ${className}` : 'kakao-channel-action';
+
+  if (isLoading) {
+    return <span className={`${classes} kakao-link-disabled`} aria-disabled="true">{icon} 카카오톡 상담 설정 확인 중</span>;
+  }
+
+  if (isError || !data?.kakaoChannelUrl) {
+    return <span className={`${classes} kakao-link-disabled`} aria-disabled="true">{icon} 카카오톡 상담 준비 중</span>;
+  }
+
+  return <a className={classes} href={data.kakaoChannelUrl} target="_blank" rel="noreferrer" aria-label={`${typeof label === 'string' ? label : '카카오톡 채널 상담'} 새 창에서 열기`}>{icon}{label}</a>;
+}
+
+function KakaoButtonLabel() {
+  const { data } = usePublicSiteSettings();
+  return <>{data?.kakaoButtonLabel ?? '카카오톡 채널 상담'}</>;
+}
+
+function TrustBadgeGroup({ duplicate = false }: { duplicate?: boolean }) {
+  return (
+    <div className="trust-marquee-group" aria-hidden={duplicate}>
+      <div className="badge badge-satisfaction">
+        <div className="badge-content">
+          <img src={customerSatisfactionBadge} alt="한국고객만족도 1위" />
+          <span>한국고객만족도 1위</span>
+        </div>
+      </div>
+      <div className="badge">
+        <div className="badge-content">
+          <div className="badge-mark" aria-hidden="true"><Trophy size={21} strokeWidth={1.7} /></div>
+          <strong>고객 만족</strong><span>서비스 품질 관리</span>
+        </div>
+      </div>
+      <div className="badge">
+        <div className="badge-content">
+          <div className="badge-mark" aria-hidden="true"><BadgeCheck size={21} strokeWidth={1.7} /></div>
+          <strong>소비자 보호</strong><span>투명한 상담 운영</span>
+        </div>
+      </div>
+      <div className="badge">
+        <div className="badge-content">
+          <div className="badge-mark" aria-hidden="true"><Landmark size={21} strokeWidth={1.7} /></div>
+          <strong>지식재산 관리</strong><span>분석 방법론 연구</span>
+        </div>
+      </div>
     </div>
   );
 }
@@ -238,9 +311,9 @@ function Home() {
               <button className="hero-quick-card quick-gold" onClick={() => openModal('membership')}>
                 <span className="quick-icon">VIP</span><strong>멤버십 서비스 안내</strong><small>전문가의 분석 번호를<br />멤버십으로 받아보세요</small><b>자세히 보기</b>
               </button>
-              <button className="hero-quick-card quick-blue" onClick={() => openModal('support')}>
-                <Headphones className="quick-svg" /><strong>고객센터</strong><small>궁금한 점이 있으신가요?<br />언제든지 문의주세요.</small><b>문의하기</b>
-              </button>
+              <KakaoChannelAction className="hero-quick-card quick-blue" icon={<Headphones className="quick-svg" />}>
+                <strong>고객센터</strong><small>궁금한 점이 있으신가요?<br />언제든지 문의주세요.</small><b><KakaoButtonLabel /></b>
+              </KakaoChannelAction>
               <Link className="hero-quick-card quick-purple" href="/community">
                 <MessageCircle className="quick-svg" /><strong>커뮤니티</strong><small>당첨 후기 공유, 정보 교류<br />함께하는 로또 커뮤니티</small><b>바로가기</b>
               </Link>
@@ -337,7 +410,7 @@ function Home() {
                 <li><Check size={15} /> 당첨 결과 복기 및 상담</li>
               </ul>
               <button className="gold-button" onClick={() => openModal('membership')}>이 플랜으로 상담하기 <ArrowRight size={16} /></button>
-              <div className="consult-box"><div><strong>1·2등 분석은 별도 상담</strong>회원님의 목표에 맞춰 안내해드립니다.</div><a href="https://pf.kakao.com/" target="_blank" rel="noreferrer">카카오톡 채널 상담</a></div>
+              <div className="consult-box"><div><strong>1·2등 분석은 별도 상담</strong>회원님의 목표에 맞춰 안내해드립니다.</div><KakaoChannelAction /></div>
             </div>
           </div>
         </section>
@@ -385,36 +458,16 @@ function Home() {
 
         <section className="section trust-section" id="support">
           <div className="shell">
-            <div className="trust-intro reveal"><div><span className="eyebrow">Trust, not noise</span><h2 className="section-title">확인할 수 있는<br /><span className="gold">신뢰의 표식.</span></h2></div><p>배지는 교체 가능한 영역으로 운영됩니다.<br />서비스의 최신 인증과 수상 이력을 투명하게 공개합니다.</p></div>
-            <div className="badges reveal delay-1">
-              <div className="badge">
-                <div className="badge-content">
-                  <div className="badge-mark" aria-hidden="true"><FlaskConical size={21} strokeWidth={1.7} /></div>
-                  <strong>연구·분석</strong><span>데이터 연구센터</span>
-                </div>
-              </div>
-              <div className="badge">
-                <div className="badge-content">
-                  <div className="badge-mark" aria-hidden="true"><Trophy size={21} strokeWidth={1.7} /></div>
-                  <strong>고객 만족</strong><span>서비스 품질 관리</span>
-                </div>
-              </div>
-              <div className="badge">
-                <div className="badge-content">
-                  <div className="badge-mark" aria-hidden="true"><BadgeCheck size={21} strokeWidth={1.7} /></div>
-                  <strong>소비자 보호</strong><span>투명한 상담 운영</span>
-                </div>
-              </div>
-              <div className="badge">
-                <div className="badge-content">
-                  <div className="badge-mark" aria-hidden="true"><Landmark size={21} strokeWidth={1.7} /></div>
-                  <strong>지식재산 관리</strong><span>분석 방법론 연구</span>
-                </div>
+            <div className="trust-intro reveal"><div><span className="eyebrow">Trust, not noise</span><h2 className="section-title">확인할 수 있는<br /><span className="gold">신뢰의 표식.</span></h2></div></div>
+            <div className="trust-marquee reveal delay-1" role="region" aria-label="신뢰 배지">
+              <div className="trust-marquee-track">
+                <TrustBadgeGroup />
+                <TrustBadgeGroup duplicate />
               </div>
             </div>
             <div className="support-strip reveal delay-2" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 20, marginTop: 52, padding: '28px 0 0', borderTop: '1px solid #30343a' }}>
               <div><span className="eyebrow">Customer care</span><h3 style={{ margin: '12px 0 0', font: '700 22px Manrope', letterSpacing: '-.05em' }}>궁금한 점은 카카오톡으로 편하게 물어보세요.</h3></div>
-              <button className="gold-button" onClick={() => openModal('support')}><Headphones size={16} /> 고객센터 문의하기</button>
+              <KakaoChannelAction className="gold-button" icon={<Headphones size={16} />}><KakaoButtonLabel /></KakaoChannelAction>
             </div>
           </div>
         </section>
@@ -425,16 +478,16 @@ function Home() {
           <div className="footer-top">
             <a className="brand" href="#top"><span className="brand-mark" /><span className="brand-text">GOLDEN PICK<small>LOTTO ANALYSIS LAB</small></span></a>
              <div className="footer-nav"><div><strong>EXPLORE</strong><Link href="/reviews">당첨 후기</Link><a href="#video">당첨 영상</a><Link href="/community">커뮤니티</Link></div><div><strong>HELP</strong><a href="#membership">멤버십</a><button style={{ display: 'block', padding: 0, marginBottom: 10, border: 0, background: 'transparent', color: '#777e87', fontSize: 12 }} onClick={() => openModal('support')}>고객센터</button><button style={{ display: 'block', padding: 0, border: 0, background: 'transparent', color: '#777e87', fontSize: 12 }} onClick={() => openModal('auth')}>로그인</button></div></div>
-            <div className="footer-call"><strong>카카오톡 채널 상담</strong><span>대표번호 없이, 카카오톡으로만 상담합니다.</span><a href="https://pf.kakao.com/" target="_blank" rel="noreferrer" className="gold" style={{ display: 'inline-block', marginTop: 13, fontSize: 12 }}>채널 바로가기 <ArrowRight size={12} style={{ verticalAlign: 'middle' }} /></a></div>
+            <div className="footer-call"><strong>카카오톡 채널 상담</strong><span>대표번호 없이, 카카오톡으로만 상담합니다.</span><KakaoChannelAction className="gold footer-kakao-link" icon={<ArrowRight size={12} />}><KakaoButtonLabel /></KakaoChannelAction></div>
           </div>
           <div className="footer-bottom"><span>© 2025 GOLDEN PICK. ALL RIGHTS RESERVED.</span><span>이용약관　개인정보처리방침</span></div>
         </div>
       </footer>
 
       {modal === 'review' && <Modal title="당첨 후기를 남겨주세요" description="회원님의 기록이 다음 사람에게는 가장 현실적인 기준이 됩니다." onClose={() => setModal(null)}>{submitted ? <div className="success-note">후기가 접수되었습니다. 검토 후 당첨 아카이브에 반영됩니다.</div> : <form className="form" onSubmit={submitForm}><label>닉네임<input name="memberName" required placeholder="공개할 이름을 입력하세요" /></label><label>당첨 회차<input name="drawAndRank" required placeholder="예: 1184회 / 3등" /></label><label>후기<textarea name="content" required placeholder="분석을 시작한 계기와 경험을 들려주세요." /></label>{submitError && <div className="form-error">{submitError}</div>}<button className="gold-button" type="submit" disabled={submitting}>{submitting ? '접수 중...' : '후기 제출하기'} <ArrowRight size={15} /></button></form>}</Modal>}
-      {modal === 'support' && <Modal title="고객센터 문의" description="대표번호 대신 카카오톡 채널로 빠르고 정확하게 상담합니다." onClose={() => setModal(null)}>{submitted ? <div className="success-note">문의가 접수되었습니다. 카카오톡 채널에서 답변을 확인해주세요.</div> : <form className="form" onSubmit={submitForm}><label>문의 유형<input name="category" required placeholder="멤버십 / 분석 번호 / 결제 등" /></label><label>연락받을 카카오톡 아이디<input name="contact" required placeholder="카카오톡 채널 상담을 위해 필요합니다" /></label><label>문의 내용<textarea name="message" required placeholder="궁금한 내용을 남겨주세요." /></label>{submitError && <div className="form-error">{submitError}</div>}<button className="gold-button" type="submit" disabled={submitting}>{submitting ? '접수 중...' : '문의 접수하기'} <MessageCircle size={15} /></button></form>}</Modal>}
+      {modal === 'support' && <Modal title="고객센터 문의" description="대표번호 대신 카카오톡 채널로 빠르고 정확하게 상담합니다." onClose={() => setModal(null)}>{submitted ? <div className="success-note">문의가 접수되었습니다. 카카오톡 채널에서 답변을 확인해주세요.</div> : <><KakaoChannelAction className="gold-button modal-kakao-action" /><form className="form" onSubmit={submitForm}><label>문의 유형<input name="category" required placeholder="멤버십 / 분석 번호 / 결제 등" /></label><label>연락받을 카카오톡 아이디<input name="contact" required placeholder="카카오톡 채널 상담을 위해 필요합니다" /></label><label>문의 내용<textarea name="message" required placeholder="궁금한 내용을 남겨주세요." /></label>{submitError && <div className="form-error">{submitError}</div>}<button className="gold-button" type="submit" disabled={submitting}>{submitting ? '접수 중...' : '문의 접수하기'} <MessageCircle size={15} /></button></form></>}</Modal>}
       {modal === 'auth' && <Modal title={authMode === 'login' ? '다시 만나서 반갑습니다' : '골든 픽 시작하기'} description={authMode === 'login' ? '분석 리포트와 커뮤니티를 이어서 확인하세요.' : '매주 새로운 분석 기록을 가장 먼저 받아보세요.'} onClose={() => setModal(null)}><div className="auth-switch"><button className={authMode === 'login' ? 'active' : ''} onClick={() => setAuthMode('login')}>로그인</button><button className={authMode === 'join' ? 'active' : ''} onClick={() => setAuthMode('join')}>회원가입</button></div>{submitted ? <div className="success-note">{authMode === 'login' ? '로그인 준비가 완료되었습니다. 곧 멤버 공간으로 이동합니다.' : '가입 신청이 접수되었습니다. 카카오톡 채널에서 안내를 확인해주세요.'}</div> : <form className="form" onSubmit={submitForm}>{authMode === 'join' && <label>이름<input required placeholder="이름을 입력하세요" /></label>}<label>이메일<input required type="email" placeholder="name@example.com" /></label><label>비밀번호<input required type="password" placeholder="6자 이상 입력하세요" /></label><button className="gold-button" type="submit">{authMode === 'login' ? '로그인하기' : '회원가입하기'} <ArrowRight size={15} /></button></form>}</Modal>}
-      {modal === 'membership' && <Modal title="멤버십 상담 신청" description="신청 내용을 확인한 뒤 카카오톡 채널로 자세한 안내를 드립니다." onClose={() => setModal(null)}>{submitted ? <div className="success-note">상담 신청이 접수되었습니다. 카카오톡 채널에서 곧 안내드리겠습니다.</div> : <form className="form" onSubmit={submitForm}><label>성함<input name="name" required placeholder="상담받으실 성함" /></label><label>카카오톡 아이디<input name="contact" required placeholder="답변받으실 카카오톡 아이디" /></label><label>관심 플랜<input name="category" defaultValue="3등 분석 번호 멤버십 / 330,000원" readOnly /></label><label>상담 메모<textarea name="message" required placeholder="1·2등 상담 등 남기고 싶은 내용을 적어주세요." /></label>{submitError && <div className="form-error">{submitError}</div>}<button className="gold-button" type="submit" disabled={submitting}>{submitting ? '신청 중...' : '상담 신청하기'} <ArrowRight size={15} /></button></form>}</Modal>}
+      {modal === 'membership' && <Modal title="멤버십 상담 신청" description="신청 내용을 확인한 뒤 카카오톡 채널로 자세한 안내를 드립니다." onClose={() => setModal(null)}>{submitted ? <div className="success-note">상담 신청이 접수되었습니다. 카카오톡 채널로 곧 안내드리겠습니다.</div> : <><KakaoChannelAction className="gold-button modal-kakao-action" /><form className="form" onSubmit={submitForm}><label>성함<input name="name" required placeholder="상담받으실 성함" /></label><label>카카오톡 아이디<input name="contact" required placeholder="답변받으실 카카오톡 아이디" /></label><label>관심 플랜<input name="category" defaultValue="3등 분석 번호 멤버십 / 330,000원" readOnly /></label><label>상담 메모<textarea name="message" required placeholder="1·2등 상담 등 남기고 싶은 내용을 적어주세요." /></label>{submitError && <div className="form-error">{submitError}</div>}<button className="gold-button" type="submit" disabled={submitting}>{submitting ? '신청 중...' : '상담 신청하기'} <ArrowRight size={15} /></button></form></>}</Modal>}
       {modal === 'video' && <Modal title="당첨 회원 인터뷰 준비 중" description="관리자가 검증한 회원 인터뷰만 공개합니다." onClose={() => setModal(null)}><div style={{ aspectRatio: '16 / 9', display: 'grid', placeItems: 'center', background: 'radial-gradient(circle, #7b571b, #101318 63%)', border: '1px solid #685127' }}><span className="video-play" style={{ position: 'static', transform: 'none' }}><Play size={23} fill="currentColor" /></span></div><p style={{ margin: '18px 0 0' }}>현재 공개 가능한 검증 자료를 준비하고 있습니다. 확인되지 않은 영상이나 당첨 정보는 표시하지 않습니다.</p></Modal>}
     </div>
   );
@@ -475,7 +528,7 @@ function PublicPageFooter() {
             <div><strong>EXPLORE</strong><Link href="/reviews">당첨 후기</Link><Link href="/community">커뮤니티</Link><Link href="/#membership">멤버십</Link></div>
             <div><strong>HELP</strong><Link href="/#support">고객센터</Link><Link href="/#top">홈페이지</Link></div>
           </div>
-          <div className="footer-call"><strong>카카오톡 채널 상담</strong><span>대표번호 없이, 카카오톡으로만 상담합니다.</span><a href="https://pf.kakao.com/" target="_blank" rel="noreferrer" className="gold" style={{ display: 'inline-block', marginTop: 13, fontSize: 12 }}>채널 바로가기 <ArrowRight size={12} style={{ verticalAlign: 'middle' }} /></a></div>
+          <div className="footer-call"><strong>카카오톡 채널 상담</strong><span>대표번호 없이, 카카오톡으로만 상담합니다.</span><KakaoChannelAction className="gold footer-kakao-link" icon={<ArrowRight size={12} />}><KakaoButtonLabel /></KakaoChannelAction></div>
         </div>
         <div className="footer-bottom"><span>© 2025 GOLDEN PICK. ALL RIGHTS RESERVED.</span><span>이용약관　개인정보처리방침</span></div>
       </div>

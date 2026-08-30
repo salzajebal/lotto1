@@ -14,6 +14,7 @@ import {
   dbAssignmentsTable,
   memberGradesTable,
   membersTable,
+  siteSettingsTable,
   supportInquiriesTable,
   winningReviewsTable,
 } from "@workspace/db";
@@ -148,6 +149,44 @@ const recordEvent = async (req: Request, action: string, entity: string, entityI
 
 const isOwner = (req: Request) => req.adminUser?.role === "owner";
 
+const defaultSiteSettings = {
+  kakaoChannelUrl: "",
+  kakaoButtonLabel: "카카오톡 채널 상담",
+};
+
+const getSiteSettings = async () => {
+  const [settings] = await db
+    .select({
+      kakaoChannelUrl: siteSettingsTable.kakaoChannelUrl,
+      kakaoButtonLabel: siteSettingsTable.kakaoButtonLabel,
+    })
+    .from(siteSettingsTable)
+    .where(eq(siteSettingsTable.id, 1))
+    .limit(1);
+  return settings ?? defaultSiteSettings;
+};
+
+const isValidKakaoChannelUrl = (value: string) => {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:"
+      && url.hostname === "pf.kakao.com"
+      && /^\/_[A-Za-z0-9]+(?:\/chat)?\/?$/.test(url.pathname)
+      && !url.search
+      && !url.hash;
+  } catch {
+    return false;
+  }
+};
+
+const siteSettingsSchema = z.object({
+  kakaoChannelUrl: z.string().trim().refine(
+    (value) => value === "" || isValidKakaoChannelUrl(value),
+    "카카오톡 채널 주소는 https://pf.kakao.com/_채널코드 형식으로 입력해주세요.",
+  ),
+  kakaoButtonLabel: z.string().trim().min(2, "버튼 문구는 2자 이상 입력해주세요.").max(40, "버튼 문구는 40자 이내로 입력해주세요."),
+});
+
 async function activeStaffExists(staffId: number | null | undefined) {
   if (staffId == null) return true;
   const [staff] = await db.select({ id: adminUsersTable.id }).from(adminUsersTable)
@@ -276,6 +315,28 @@ router.patch("/admin/me", async (req, res): Promise<void> => {
   }).where(eq(adminUsersTable.id, req.adminUser!.id)).returning();
   await recordEvent(req, "update", "admin_profile", user.id);
   res.json({ user: publicAdmin(user) });
+});
+
+router.get("/admin/site-settings", async (_req, res): Promise<void> => {
+  res.json(await getSiteSettings());
+});
+
+router.patch("/admin/site-settings", requireOwner, async (req, res): Promise<void> => {
+  const body = parse(siteSettingsSchema, req.body, res);
+  if (!body) return;
+  const [settings] = await db
+    .insert(siteSettingsTable)
+    .values({ id: 1, ...body })
+    .onConflictDoUpdate({
+      target: siteSettingsTable.id,
+      set: { ...body, updatedAt: new Date() },
+    })
+    .returning();
+  await recordEvent(req, "update", "site_settings", settings.id, "카카오톡 상담 채널 설정");
+  res.json({
+    kakaoChannelUrl: settings.kakaoChannelUrl,
+    kakaoButtonLabel: settings.kakaoButtonLabel,
+  });
 });
 
 router.get("/admin/dashboard", async (req, res): Promise<void> => {
@@ -794,6 +855,10 @@ router.post("/support", publicWriteRateLimit, async (req, res): Promise<void> =>
     subject: body.category,
   }).returning();
   res.status(201).json({ id: inquiry.id, message: "문의가 접수되었습니다." });
+});
+
+router.get("/site-settings", async (_req, res): Promise<void> => {
+  res.json(await getSiteSettings());
 });
 
 router.post("/reviews", publicWriteRateLimit, async (req, res): Promise<void> => {

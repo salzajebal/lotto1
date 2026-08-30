@@ -125,6 +125,13 @@ export const communityPostsTable = pgTable("community_posts", {
   ...timestamps,
 });
 
+export const siteSettingsTable = pgTable("site_settings", {
+  id: serial("id").primaryKey(),
+  kakaoChannelUrl: text("kakao_channel_url").notNull().default(""),
+  kakaoButtonLabel: text("kakao_button_label").notNull().default("카카오톡 채널 상담"),
+  ...timestamps,
+});
+
 export const auditEventsTable = pgTable("audit_events", {
   id: serial("id").primaryKey(),
   adminId: integer("admin_id").references(() => adminUsersTable.id, { onDelete: "set null" }),
@@ -142,3 +149,4 @@ export type AnalysisDatabase = typeof analysisDatabasesTable.$inferSelect;
 export type SupportInquiry = typeof supportInquiriesTable.$inferSelect;
 export type WinningReview = typeof winningReviewsTable.$inferSelect;
 export type CommunityPost = typeof communityPostsTable.$inferSelect;
+export type SiteSettings = typeof siteSettingsTable.$inferSelect;

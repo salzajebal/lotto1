@@ -206,6 +206,10 @@ a { color: inherit; text-decoration: none; }
 .consult-box { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 20px 0 0; color: #a0a4aa; font-size: 12px; }
 .consult-box strong { display: block; margin-bottom: 5px; color: #eee6cf; font-size: 14px; }
 .consult-box a { color: #e8bb51; text-decoration: underline; text-underline-offset: 4px; white-space: nowrap; }
+.kakao-channel-action { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.kakao-link-disabled { cursor: not-allowed; opacity: .62; }
+.footer-kakao-link { display: inline-flex; align-items: center; gap: 6px; margin-top: 13px; font-size: 12px; }
+.modal-kakao-action { width: 100%; margin-bottom: 18px; }
 
 .community-section { background: #101318; }
 .community-grid { display: grid; grid-template-columns: 1.14fr .86fr; gap: 18px; }
@@ -264,12 +268,21 @@ a { color: inherit; text-decoration: none; }
 .trust-section { background: #0d1015; border-top: 1px solid #292d34; }
 .trust-intro { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 34px; }
 .trust-intro p { color: #7f858f; font-size: 12px; }
-.badges { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid #30343a; border-bottom: 1px solid #30343a; }
-.badge { min-height: 130px; display: grid; place-items: center; text-align: center; padding: 20px; border-right: 1px solid #30343a; color: #aeb1b4; }
+.trust-marquee { position: relative; overflow: hidden; border: 1px solid #d6dbe2; border-radius: 18px; background: linear-gradient(90deg, #edf0f3 0%, #fff 12%, #fff 88%, #edf0f3 100%); box-shadow: 0 12px 30px rgba(0, 0, 0, .16), inset 0 1px 0 rgba(255, 255, 255, .9); }
+.trust-marquee::before, .trust-marquee::after { content: ''; position: absolute; z-index: 2; top: 0; bottom: 0; width: 76px; pointer-events: none; }
+.trust-marquee::before { left: 0; background: linear-gradient(90deg, #edf0f3, rgba(237, 240, 243, 0)); }
+.trust-marquee::after { right: 0; background: linear-gradient(270deg, #edf0f3, rgba(237, 240, 243, 0)); }
+.trust-marquee-track { display: flex; width: max-content; animation: trustMarquee 30s linear infinite; }
+.trust-marquee-group { display: flex; flex: 0 0 auto; }
+.badge { min-height: 130px; min-width: 220px; display: grid; place-items: center; text-align: center; padding: 20px 28px; border-right: 1px solid #dfe3e8; color: #4d5663; background: rgba(255, 255, 255, .82); }
 .badge:last-child { border-right: 0; }
+.badge-satisfaction { min-width: 250px; }
+.badge-satisfaction img { display: block; width: 120px; height: 92px; object-fit: contain; margin: -3px auto 1px; }
+.badge-satisfaction span { display: block; margin-top: 3px; color: #4d5663; font-size: 11px; font-weight: 700; }
 .badge-mark { width: 43px; height: 43px; display: grid; place-items: center; margin-bottom: 10px; border: 1px solid #937337; color: #e8bb51; font: 700 13px Manrope; }
 .badge strong { display: block; color: #ddd3b7; font-size: 12px; }
 .badge span { display: block; margin-top: 4px; color: #777e88; font-size: 10px; }
+@keyframes trustMarquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 
 .footer { padding: 60px 0 38px; background: #0b0e12; color: #7f858f; }
 .footer-top { display: flex; justify-content: space-between; gap: 40px; padding-bottom: 48px; }
@@ -303,8 +316,8 @@ a { color: inherit; text-decoration: none; }
   .hero h1 { font-size: clamp(43px, 14vw, 72px); }.hero-sub { font-size: 14px; }.hero-actions > * { width: 100%; }.hero-visual { min-height: 350px; }.orbit { width: 300px; }.ball { width: 190px; height: 190px; }.ball-number { width: 88px; height: 88px; font-size: 49px; }.ball-caption { bottom: 2px; }
   .story { grid-template-columns: 62px 1fr; gap: 14px; }.story-amount { grid-column: 2; }.story-rank { width: 54px; height: 54px; font-size: 15px; }
   .video-card { min-height: 350px; padding: 25px; }.video-card::before { left: 25px; top: 24px; }.video-card h3 { font-size: 28px; }.video-ghost { width: 150px; height: 150px; right: -3%; top: 22%; }.video-index { right: 25px; bottom: 25px; }
-  .method-grid, .badges { grid-template-columns: 1fr 1fr; }.method-item { min-height: 215px; padding: 22px 15px 20px 0; }.method-item:not(:first-child) { padding-left: 15px; }.method-item:nth-child(2) { border-right: 0; }.method-item:nth-child(3), .method-item:nth-child(4) { border-top: 1px solid #34363a; }.method-item h3 { margin-top: 35px; font-size: 18px; }.method-item p { font-size: 12px; }
-  .price-card, .community-main { padding: 24px; }.price strong { font-size: 42px; }.consult-box { align-items: flex-start; flex-direction: column; }.badges .badge { min-height: 118px; padding: 12px 7px; border-bottom: 1px solid #30343a; }.badges .badge:nth-child(2) { border-right: 0; }.badge strong { font-size: 10px; }
+  .method-grid { grid-template-columns: 1fr 1fr; }.method-item { min-height: 215px; padding: 22px 15px 20px 0; }.method-item:not(:first-child) { padding-left: 15px; }.method-item:nth-child(2) { border-right: 0; }.method-item:nth-child(3), .method-item:nth-child(4) { border-top: 1px solid #34363a; }.method-item h3 { margin-top: 35px; font-size: 18px; }.method-item p { font-size: 12px; }
+  .price-card, .community-main { padding: 24px; }.price strong { font-size: 42px; }.consult-box { align-items: flex-start; flex-direction: column; }.badge { min-width: 174px; min-height: 118px; padding: 12px 14px; }.badge-satisfaction { min-width: 195px; }.badge-satisfaction img { width: 104px; height: 76px; }.badge strong { font-size: 10px; }
   .trust-intro { align-items: flex-start; flex-direction: column; gap: 8px; }.footer-top, .footer-bottom { align-items: flex-start; flex-direction: column; }.footer-call { text-align: left; }.footer-nav { gap: 28px; }
 }
 
@@ -1535,5 +1548,46 @@ a { color: inherit; text-decoration: none; }
 
   .review-submit-card h3 {
     font-size: 26px;
+  }
+}
+
+/* Moving trust banner */
+.lotto-app .trust-marquee {
+  border-color: #d6dbe2;
+  background: linear-gradient(90deg, #edf0f3 0%, #fff 12%, #fff 88%, #edf0f3 100%);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, .16), inset 0 1px 0 rgba(255, 255, 255, .9);
+}
+
+.lotto-app .trust-marquee::before {
+  background: linear-gradient(90deg, #edf0f3, rgba(237, 240, 243, 0));
+}
+
+.lotto-app .trust-marquee::after {
+  background: linear-gradient(270deg, #edf0f3, rgba(237, 240, 243, 0));
+}
+
+.lotto-app .trust-marquee .badge {
+  border-color: #dfe3e8;
+  background: rgba(255, 255, 255, .82);
+}
+
+.lotto-app .trust-marquee .badge strong,
+.lotto-app .trust-marquee .badge-satisfaction span {
+  color: #2e3947;
+}
+
+.lotto-app .trust-marquee .badge span {
+  color: #707b89;
+}
+
+.lotto-app .trust-marquee .badge-mark {
+  border-color: #cda64f;
+  color: #b3852c;
+  background: #fffdf7;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trust-marquee-track {
+    animation-play-state: paused;
   }
 }

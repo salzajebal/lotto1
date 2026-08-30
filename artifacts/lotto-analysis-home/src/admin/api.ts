@@ -68,6 +68,28 @@ export function useUpdateAdminProfile() {
   });
 }
 
+export function useAdminSiteSettings() {
+  return useQuery({
+    queryKey: ['adminSiteSettings'],
+    queryFn: () => fetcher(`${API_BASE}/site-settings`),
+  });
+}
+
+export function useUpdateSiteSettings() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: (data: { kakaoChannelUrl: string; kakaoButtonLabel: string }) =>
+      fetcher(`${API_BASE}/site-settings`, { method: 'PATCH', body: JSON.stringify(data) }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminSiteSettings'] });
+      queryClient.invalidateQueries({ queryKey: ['publicSiteSettings'] });
+      toast({ title: '카카오톡 상담 설정 저장 완료', description: '공개 페이지의 상담 버튼에 즉시 반영됩니다.' });
+    },
+    onError: (err: Error) => toast({ title: '카카오톡 상담 설정 저장 실패', description: err.message, variant: 'destructive' }),
+  });
+}
+
 export function useDashboard() {
   return useQuery({ queryKey: ['adminDashboard'], queryFn: () => fetcher(`${API_BASE}/dashboard`) });
 }
