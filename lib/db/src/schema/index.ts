@@ -45,6 +45,8 @@ export const memberGradesTable = pgTable("member_grades", {
 
 export const membersTable = pgTable("members", {
   id: serial("id").primaryKey(),
+  username: text("username"),
+  passwordHash: text("password_hash"),
   name: text("name").notNull(),
   email: text("email").notNull().default(""),
   phone: text("phone").notNull().default(""),

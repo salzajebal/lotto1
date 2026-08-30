@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useMembers, useGrades, useStaff, useCreateMember, useUpdateMember } from '../api';
 import { Card, Table, Th, Td, Badge, Button, Input, Select, Modal, Label, Textarea } from '../components/UI';
-import { Search, Plus, Edit2, Loader2 } from 'lucide-react';
+import { Search, Plus, Edit2, Eye, Loader2 } from 'lucide-react';
 
 const memberStatusLabels: Record<string, string> = {
   pending: '승인 대기',
@@ -17,6 +17,8 @@ const memberStatusVariants: Record<string, 'default' | 'success' | 'warning' | '
   rejected: 'danger',
 };
 
+const formatDateTime = (value?: string) => value ? new Date(value).toLocaleString('ko-KR') : '-';
+
 export default function MembersView() {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -29,26 +31,27 @@ export default function MembersView() {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [detailMember, setDetailMember] = useState<any | null>(null);
   
   const createMember = useCreateMember();
   const updateMember = useUpdateMember();
 
   const [form, setForm] = useState({
-    name: '', email: '', phone: '', gradeId: 0, status: 'active', assignedStaffId: 0, paymentAmount: 0, monthlyRevenue: 0, notes: ''
+    username: '', name: '', email: '', phone: '', gradeId: 0, status: 'active', assignedStaffId: 0, paymentAmount: 0, monthlyRevenue: 0, notes: ''
   });
 
   const openModal = (member?: any) => {
     if (member) {
       setEditingId(member.id);
       setForm({
-        name: member.name, email: member.email || '', phone: member.phone || '',
+        username: member.username || '', name: member.name, email: member.email || '', phone: member.phone || '',
         gradeId: member.gradeId || 0, status: member.status, assignedStaffId: member.assignedStaffId || 0,
         paymentAmount: member.paymentAmount || 0, monthlyRevenue: member.monthlyRevenue || 0, notes: member.notes || ''
       });
     } else {
       setEditingId(null);
       setForm({
-        name: '', email: '', phone: '', gradeId: grades?.[0]?.id || 0, status: 'active', assignedStaffId: 0, paymentAmount: 0, monthlyRevenue: 0, notes: ''
+        username: '', name: '', email: '', phone: '', gradeId: grades?.[0]?.id || 0, status: 'active', assignedStaffId: 0, paymentAmount: 0, monthlyRevenue: 0, notes: ''
       });
     }
     setModalOpen(true);
@@ -58,6 +61,7 @@ export default function MembersView() {
     e.preventDefault();
     const payload = {
       ...form,
+      username: form.username || undefined,
       gradeId: form.gradeId || null,
       assignedStaffId: form.assignedStaffId || null,
       paymentAmount: Number(form.paymentAmount),
@@ -87,7 +91,7 @@ export default function MembersView() {
           <Search size={16} className="absolute left-3 top-2.5 text-[var(--ad-muted)]" />
           <Input 
             className="pl-9" 
-            placeholder="이름, 이메일, 전화번호 검색..." 
+            placeholder="아이디, 이름, 전화번호 검색..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && setDebouncedSearch(search)}
@@ -114,6 +118,7 @@ export default function MembersView() {
           <thead>
             <tr>
               <Th>이름</Th>
+              <Th>아이디</Th>
               <Th>전화번호</Th>
               <Th>가입일</Th>
               <Th>실제 결제금액</Th>
@@ -127,6 +132,7 @@ export default function MembersView() {
             {members?.map((m: any) => (
               <tr key={m.id} className="hover:bg-[var(--ad-panel-hover)] transition-colors">
                 <Td className="font-semibold text-white">{m.name}</Td>
+                <Td>{m.username || <span className="text-[var(--ad-muted)]">-</span>}</Td>
                 <Td>
                   <div className="text-sm">{m.phone || '-'}</div>
                   {m.email && <div className="text-xs text-[var(--ad-muted)]">{m.email}</div>}
@@ -149,19 +155,67 @@ export default function MembersView() {
                  )}
                </Td>
                 <Td className="text-right">
-                  <Button variant="ghost" size="sm" onClick={() => openModal(m)}><Edit2 size={14} /></Button>
+                   <div className="flex justify-end gap-1">
+                     <Button variant="outline" size="sm" onClick={() => setDetailMember(m)} title="상세 보기" aria-label={`${m.name} 상세 보기`}><Eye size={14} /></Button>
+                     <Button variant="ghost" size="sm" onClick={() => openModal(m)} title="수정" aria-label={`${m.name} 수정`}><Edit2 size={14} /></Button>
+                   </div>
                 </Td>
               </tr>
             ))}
             {members?.length === 0 && (
-              <tr><Td colSpan={8} className="text-center py-8 text-[var(--ad-muted)]">검색된 회원이 없습니다.</Td></tr>
+              <tr><Td colSpan={9} className="text-center py-8 text-[var(--ad-muted)]">검색된 회원이 없습니다.</Td></tr>
             )}
           </tbody>
         </Table>
       )}
 
+       <Modal title="회원 상세정보" isOpen={Boolean(detailMember)} onClose={() => setDetailMember(null)}>
+         {detailMember && (
+           <div className="space-y-5">
+             <div className="flex items-start justify-between gap-4">
+               <div>
+                 <p className="text-xl font-bold text-white">{detailMember.name}</p>
+                 <p className="text-sm text-[var(--ad-muted)] mt-1">{detailMember.username || '회원 아이디 미등록'}</p>
+               </div>
+               <Badge variant={memberStatusVariants[detailMember.status] || 'default'}>
+                 {memberStatusLabels[detailMember.status] || detailMember.status}
+               </Badge>
+             </div>
+
+             <div className="grid grid-cols-2 gap-x-4 gap-y-4">
+               <div><Label>회원 아이디</Label><p className="text-sm text-white">{detailMember.username || '-'}</p></div>
+               <div><Label>이름</Label><p className="text-sm text-white">{detailMember.name || '-'}</p></div>
+               <div><Label>전화번호</Label><p className="text-sm text-white">{detailMember.phone || '-'}</p></div>
+               <div><Label>이메일</Label><p className="text-sm text-white">{detailMember.email || '-'}</p></div>
+               <div><Label>회원 등급</Label><p className="text-sm text-white">{detailMember.gradeName || '등급 미지정'}</p></div>
+               <div><Label>담당자</Label><p className="text-sm text-white">{detailMember.staffName || '미배정'}</p></div>
+               <div><Label>실제 결제금액</Label><p className="text-sm text-[var(--ad-gold)]">₩{(detailMember.paymentAmount || 0).toLocaleString()}</p></div>
+               <div><Label>월 예상 수익</Label><p className="text-sm text-[var(--ad-gold)]">₩{(detailMember.monthlyRevenue || 0).toLocaleString()}</p></div>
+               <div><Label>가입 경로</Label><p className="text-sm text-white">{detailMember.source || '-'}</p></div>
+               <div><Label>가입일</Label><p className="text-sm text-white">{formatDateTime(detailMember.createdAt)}</p></div>
+               <div className="col-span-2"><Label>최근 수정일</Label><p className="text-sm text-white">{formatDateTime(detailMember.updatedAt)}</p></div>
+             </div>
+
+             <div>
+               <Label>상담 메모</Label>
+               <div className="rounded-md border border-[var(--ad-border)] bg-[#0B0E14] px-3 py-3 text-sm text-[#E2E8F0] whitespace-pre-wrap min-h-[72px]">
+                 {detailMember.notes || '등록된 메모가 없습니다.'}
+               </div>
+             </div>
+
+             <div className="pt-1 flex justify-end">
+               <Button variant="secondary" onClick={() => setDetailMember(null)}>닫기</Button>
+             </div>
+           </div>
+         )}
+       </Modal>
+
       <Modal title={editingId ? '회원 정보 수정' : '신규 회원 등록'} isOpen={modalOpen} onClose={() => setModalOpen(false)}>
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label>회원 아이디</Label>
+            <Input minLength={3} maxLength={32} value={form.username} onChange={e => setForm({...form, username: e.target.value})} autoComplete="username" />
+          </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>이름 *</Label>

@@ -223,6 +223,11 @@ const adminAccountSchema = z.object({
   password: z.string().min(8, "비밀번호는 8자 이상 입력해주세요."),
 });
 const adminBootstrapSchema = adminAccountSchema.pick({ username: true, password: true });
+const memberUsernameSchema = z.string().trim().min(3, "아이디는 3자 이상 입력해주세요.").max(32, "아이디는 32자 이내로 입력해주세요.").regex(
+  /^[A-Za-z0-9._-]+$/,
+  "아이디는 영문, 숫자, 마침표, 밑줄, 하이픈만 사용할 수 있습니다.",
+);
+const memberPasswordSchema = z.string().min(6, "비밀번호는 6자 이상 입력해주세요.").max(100, "비밀번호는 100자 이내로 입력해주세요.");
 
 router.get("/admin/auth/status", async (req, res): Promise<void> => {
   const [count] = await db.select({ count: sql<number>`count(*)::int` }).from(adminUsersTable);
@@ -397,7 +402,7 @@ router.get("/admin/members", async (req, res): Promise<void> => {
   const status = text(req.query.status);
   const gradeId = int(req.query.gradeId, 0);
   const filters = [];
-  if (search) filters.push(or(ilike(membersTable.name, `%${search}%`), ilike(membersTable.phone, `%${search}%`), ilike(membersTable.email, `%${search}%`)));
+  if (search) filters.push(or(ilike(membersTable.username, `%${search}%`), ilike(membersTable.name, `%${search}%`), ilike(membersTable.phone, `%${search}%`), ilike(membersTable.email, `%${search}%`)));
   if (status && status !== "all") filters.push(eq(membersTable.status, status));
   if (gradeId) filters.push(eq(membersTable.gradeId, gradeId));
   if (!isOwner(req)) filters.push(eq(membersTable.assignedStaffId, req.adminUser!.id));
@@ -408,11 +413,15 @@ router.get("/admin/members", async (req, res): Promise<void> => {
     .leftJoin(adminUsersTable, eq(membersTable.assignedStaffId, adminUsersTable.id))
     .where(filters.length ? and(...filters) : undefined)
     .orderBy(desc(membersTable.createdAt));
-  res.json(rows.map(({ member, gradeName, staffName }) => ({ ...member, gradeName, staffName })));
+  res.json(rows.map(({ member, gradeName, staffName }) => {
+    const { passwordHash: _passwordHash, ...safeMember } = member;
+    return { ...safeMember, gradeName, staffName };
+  }));
 });
 
 router.post("/admin/members", async (req, res): Promise<void> => {
   const body = parse(z.object({
+    username: memberUsernameSchema.optional(),
     name: z.string().trim().min(1),
     email: z.string().trim().email().or(z.literal("")).default(""),
     phone: z.string().trim().default(""),
@@ -424,6 +433,15 @@ router.post("/admin/members", async (req, res): Promise<void> => {
     notes: z.string().default(""),
   }), req.body, res);
   if (!body) return;
+  if (body.username) {
+    const username = body.username.toLowerCase();
+    const [existing] = await db.select({ id: membersTable.id }).from(membersTable).where(eq(membersTable.username, username)).limit(1);
+    if (existing) {
+      res.status(409).json({ error: "이미 사용 중인 아이디입니다." });
+      return;
+    }
+    body.username = username;
+  }
   if (!(await activeStaffExists(body.assignedStaffId))) {
     res.status(400).json({ error: "활성 상태인 담당 직원을 선택해주세요." });
     return;
@@ -443,6 +461,7 @@ router.post("/admin/members", async (req, res): Promise<void> => {
 router.patch("/admin/members/:id", async (req, res): Promise<void> => {
   const id = int(req.params.id);
   const body = parse(z.object({
+    username: memberUsernameSchema.optional(),
     name: z.string().trim().min(1).optional(),
     email: z.string().trim().email().or(z.literal("")).optional(),
     phone: z.string().trim().optional(),
@@ -454,6 +473,16 @@ router.patch("/admin/members/:id", async (req, res): Promise<void> => {
     notes: z.string().optional(),
   }), req.body, res);
   if (!body) return;
+  if (body.username) {
+    const username = body.username.toLowerCase();
+    const [existing] = await db.select({ id: membersTable.id }).from(membersTable)
+      .where(and(eq(membersTable.username, username), sql`${membersTable.id} <> ${id}`)).limit(1);
+    if (existing) {
+      res.status(409).json({ error: "이미 사용 중인 아이디입니다." });
+      return;
+    }
+    body.username = username;
+  }
   if (!(await canAccessMember(req, id))) {
     res.status(403).json({ error: "이 회원을 수정할 권한이 없습니다." });
     return;
@@ -891,18 +920,59 @@ router.post("/support", publicWriteRateLimit, async (req, res): Promise<void> =>
 
 router.post("/member-signups", publicWriteRateLimit, async (req, res): Promise<void> => {
   const body = parse(z.object({
+    username: memberUsernameSchema,
+    password: memberPasswordSchema,
     name: z.string().trim().min(1, "이름을 입력해주세요.").max(80),
-    email: z.string().trim().email("올바른 이메일을 입력해주세요.").max(120),
+    phone: z.string().trim().min(8, "전화번호를 입력해주세요.").max(30),
   }), req.body, res);
   if (!body) return;
+  const username = body.username.toLowerCase();
+  const [existing] = await db.select({ id: membersTable.id }).from(membersTable).where(eq(membersTable.username, username)).limit(1);
+  if (existing) {
+    res.status(409).json({ error: "이미 사용 중인 아이디입니다." });
+    return;
+  }
   const [member] = await db.insert(membersTable).values({
+    username,
+    passwordHash: hashPassword(body.password),
     name: body.name,
-    email: body.email.toLowerCase(),
+    phone: body.phone,
     status: "pending",
     source: "website",
     notes: "공개 홈페이지 회원가입 신청",
   }).returning();
   res.status(201).json({ id: member.id, message: "회원가입 신청이 접수되었습니다." });
+});
+
+router.post("/member-auth/login", async (req, res): Promise<void> => {
+  const body = parse(z.object({
+    username: memberUsernameSchema,
+    password: memberPasswordSchema,
+  }), req.body, res);
+  if (!body) return;
+  const username = body.username.toLowerCase();
+  const attemptKey = `member:${req.ip || "unknown"}:${username}`;
+  const now = Date.now();
+  const attempt = loginAttempts.get(attemptKey);
+  if (attempt && attempt.resetAt > now && attempt.count >= 5) {
+    res.status(429).json({ error: "로그인 시도가 너무 많습니다. 15분 후 다시 시도해주세요." });
+    return;
+  }
+  const [member] = await db.select().from(membersTable).where(eq(membersTable.username, username)).limit(1);
+  if (!member || !member.passwordHash || !verifyPassword(body.password, member.passwordHash)) {
+    loginAttempts.set(attemptKey, {
+      count: attempt && attempt.resetAt > now ? attempt.count + 1 : 1,
+      resetAt: attempt && attempt.resetAt > now ? attempt.resetAt : now + 15 * 60 * 1000,
+    });
+    res.status(401).json({ error: "아이디 또는 비밀번호가 올바르지 않습니다." });
+    return;
+  }
+  if (member.status !== "active") {
+    res.status(403).json({ error: member.status === "pending" ? "관리자 승인 대기 중입니다." : "현재 로그인할 수 없는 회원 계정입니다." });
+    return;
+  }
+  loginAttempts.delete(attemptKey);
+  res.json({ member: { id: member.id, username: member.username, name: member.name } });
 });
 
 router.get("/site-settings", async (_req, res): Promise<void> => {
