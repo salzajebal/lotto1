@@ -222,6 +222,7 @@ const adminAccountSchema = z.object({
   email: z.string().trim().email("올바른 이메일을 입력해주세요."),
   password: z.string().min(8, "비밀번호는 8자 이상 입력해주세요."),
 });
+const adminBootstrapSchema = adminAccountSchema.pick({ username: true, password: true });
 
 router.get("/admin/auth/status", async (req, res): Promise<void> => {
   const [count] = await db.select({ count: sql<number>`count(*)::int` }).from(adminUsersTable);
@@ -230,7 +231,7 @@ router.get("/admin/auth/status", async (req, res): Promise<void> => {
 });
 
 router.post("/admin/auth/bootstrap", async (req, res): Promise<void> => {
-  const body = parse(adminAccountSchema, req.body, res);
+  const body = parse(adminBootstrapSchema, req.body, res);
   if (!body) return;
   const token = randomBytes(32).toString("hex");
   const user = await db.transaction(async (tx) => {
@@ -240,9 +241,9 @@ router.post("/admin/auth/bootstrap", async (req, res): Promise<void> => {
     const [created] = await tx
       .insert(adminUsersTable)
         .values({
-          name: body.name,
+          name: "운영자",
           username: body.username.toLowerCase(),
-          email: body.email.toLowerCase(),
+          email: "admin@lottorico.com",
           passwordHash: hashPassword(body.password),
           role: "owner",
         })

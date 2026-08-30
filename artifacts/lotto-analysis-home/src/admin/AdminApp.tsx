@@ -15,9 +15,7 @@ import SettingsView from './views/SettingsView';
 import CommunityView from './views/CommunityView';
 
 function AuthScreen({ needsBootstrap }: { needsBootstrap: boolean }) {
-  const [name, setName] = useState('');
   const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   
   const login = useAdminLogin();
@@ -26,7 +24,7 @@ function AuthScreen({ needsBootstrap }: { needsBootstrap: boolean }) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (needsBootstrap) {
-      bootstrap.mutate({ name, username, email, password });
+      bootstrap.mutate({ username, password });
     } else {
       login.mutate({ username, password });
     }
@@ -41,30 +39,18 @@ function AuthScreen({ needsBootstrap }: { needsBootstrap: boolean }) {
           </div>
           <p className="text-[var(--ad-gold)] text-sm font-bold tracking-tight mb-2">로또리코</p>
           <h1 className="text-2xl font-bold tracking-tight text-white">
-            {needsBootstrap ? '초기 설정' : '운영 콘솔 로그인'}
+            {needsBootstrap ? '관리자 계정 생성' : '운영 콘솔 로그인'}
           </h1>
           <p className="text-[var(--ad-muted)] text-sm mt-2">
-            {needsBootstrap ? '최초 관리자 계정을 생성하세요.' : '담당자 계정으로 로그인하세요.'}
+            아이디와 비밀번호만 입력하세요.
           </p>
         </div>
         
         <form onSubmit={handleSubmit} className="space-y-4">
-          {needsBootstrap && (
-            <div>
-              <Label>이름</Label>
-              <Input required value={name} onChange={e => setName(e.target.value)} placeholder="운영자" />
-            </div>
-          )}
           <div>
             <Label>아이디</Label>
             <Input required minLength={3} value={username} onChange={e => setUsername(e.target.value)} placeholder="admin" autoComplete="username" />
           </div>
-          {needsBootstrap && (
-            <div>
-              <Label>이메일</Label>
-              <Input required type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="admin@lottorico.com" autoComplete="email" />
-            </div>
-          )}
           <div>
             <Label>비밀번호</Label>
             <Input required type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" autoComplete="current-password" />
