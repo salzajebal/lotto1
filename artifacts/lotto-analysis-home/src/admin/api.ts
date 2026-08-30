@@ -95,11 +95,12 @@ export function useDashboard() {
   return useQuery({ queryKey: ['adminDashboard'], queryFn: () => fetcher(`${API_BASE}/dashboard`) });
 }
 
-export function useMembers(params?: { search?: string, status?: string, gradeId?: number }) {
+export function useMembers(params?: { search?: string, status?: string, gradeId?: number; page?: number }) {
   const qs = new URLSearchParams();
   if (params?.search) qs.set('search', params.search);
   if (params?.status) qs.set('status', params.status);
   if (params?.gradeId) qs.set('gradeId', String(params.gradeId));
+  if (params?.page) qs.set('page', String(params.page));
   return useQuery({ queryKey: ['adminMembers', params], queryFn: () => fetcher(`${API_BASE}/members?${qs.toString()}`) });
 }
 
@@ -181,8 +182,8 @@ export function useDeleteGrade() {
   });
 }
 
-export function useDatabases() {
-  return useQuery({ queryKey: ['adminDatabases'], queryFn: () => fetcher(`${API_BASE}/databases`) });
+export function useDatabases(page = 1) {
+  return useQuery({ queryKey: ['adminDatabases', page], queryFn: () => fetcher(`${API_BASE}/databases?page=${page}`) });
 }
 
 export function useCreateDatabase() {
@@ -302,9 +303,10 @@ export function useBulkAssignDatabases() {
   });
 }
 
-export function useInquiries(params?: { status?: string }) {
+export function useInquiries(params?: { status?: string; page?: number }) {
   const qs = new URLSearchParams();
   if (params?.status) qs.set('status', params.status);
+  if (params?.page) qs.set('page', String(params.page));
   return useQuery({ queryKey: ['adminInquiries', params], queryFn: () => fetcher(`${API_BASE}/inquiries?${qs.toString()}`) });
 }
 
@@ -399,8 +401,11 @@ export function useDeleteReview() {
   });
 }
 
-export function useCommunityPosts() {
-  return useQuery({ queryKey: ['adminCommunityPosts'], queryFn: () => fetcher(`${API_BASE}/community-posts`) });
+export function useCommunityPosts(page = 1) {
+  return useQuery({
+    queryKey: ['adminCommunityPosts', page],
+    queryFn: () => fetcher(`${API_BASE}/community-posts?page=${page}`),
+  });
 }
 
 export function useCreateCommunityPost() {

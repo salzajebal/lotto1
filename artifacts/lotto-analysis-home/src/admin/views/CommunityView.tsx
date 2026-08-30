@@ -18,7 +18,10 @@ const emptyForm = {
 };
 
 export default function CommunityView() {
-  const { data: posts, isLoading } = useCommunityPosts();
+  const [page, setPage] = useState(1);
+  const { data, isLoading } = useCommunityPosts(page);
+  const posts = data?.items || [];
+  const pagination = data?.pagination;
   const createPost = useCreateCommunityPost();
   const updatePost = useUpdateCommunityPost();
   const deletePost = useDeleteCommunityPost();
@@ -112,6 +115,16 @@ export default function CommunityView() {
             )}
           </tbody>
         </Table>
+      )}
+
+      {pagination && pagination.total > 0 && (
+        <div className="flex items-center justify-between rounded-lg border border-[var(--ad-border)] bg-[var(--ad-panel)] px-4 py-3">
+          <p className="text-xs text-[var(--ad-muted)]">총 {pagination.total.toLocaleString()}개 · {pagination.page} / {pagination.totalPages} 페이지</p>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((current) => Math.max(1, current - 1))}>이전</Button>
+            <Button variant="outline" size="sm" disabled={page >= pagination.totalPages} onClick={() => setPage((current) => Math.min(pagination.totalPages, current + 1))}>다음</Button>
+          </div>
+        </div>
       )}
 
       <Modal title={editingId ? '커뮤니티 게시글 수정' : '커뮤니티 게시글 등록'} isOpen={modalOpen} onClose={() => setModalOpen(false)}>

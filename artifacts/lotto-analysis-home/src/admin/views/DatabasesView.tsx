@@ -7,7 +7,10 @@ import { Eye, MessageSquareText, Plus, Upload, UserPlus, Loader2, CheckSquare } 
 
 export default function DatabasesView({ user }: { user: { role: string } }) {
   const canAssign = user.role === 'owner';
-  const { data: databases, isLoading } = useDatabases();
+  const [page, setPage] = useState(1);
+  const { data, isLoading } = useDatabases(page);
+  const databases = data?.items || [];
+  const pagination = data?.pagination;
   const { data: staffList } = useStaff();
   
   const createDb = useCreateDatabase();
@@ -53,8 +56,11 @@ export default function DatabasesView({ user }: { user: { role: string } }) {
   };
 
   const toggleAll = () => {
-    if (selectedIds.size === databases?.length) setSelectedIds(new Set());
-    else setSelectedIds(new Set(databases?.map((d: any) => d.id)));
+    const currentIds = databases.map((d: any) => d.id);
+    const allCurrentSelected = currentIds.length > 0 && currentIds.every((id: number) => selectedIds.has(id));
+    const next = new Set(selectedIds);
+    currentIds.forEach((id: number) => allCurrentSelected ? next.delete(id) : next.add(id));
+    setSelectedIds(next);
   };
 
   return (
@@ -90,7 +96,7 @@ export default function DatabasesView({ user }: { user: { role: string } }) {
           <thead>
             <tr>
               <Th>
-                {canAssign && <button className="text-[var(--ad-muted)] hover:text-white" onClick={toggleAll}><CheckSquare size={16} /></button>}
+                 {canAssign && <button className="text-[var(--ad-muted)] hover:text-white" onClick={toggleAll} aria-label="현재 페이지 전체 선택"><CheckSquare size={16} /></button>}
               </Th>
               <Th>DB 식별자</Th>
               <Th>회차</Th>
@@ -144,6 +150,16 @@ export default function DatabasesView({ user }: { user: { role: string } }) {
             )}
           </tbody>
         </Table>
+      )}
+
+      {pagination && pagination.total > 0 && (
+        <div className="flex items-center justify-between rounded-lg border border-[var(--ad-border)] bg-[var(--ad-panel)] px-4 py-3">
+          <p className="text-xs text-[var(--ad-muted)]">총 {pagination.total.toLocaleString()}개 · {pagination.page} / {pagination.totalPages} 페이지</p>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((current) => Math.max(1, current - 1))}>이전</Button>
+            <Button variant="outline" size="sm" disabled={page >= pagination.totalPages} onClick={() => setPage((current) => Math.min(pagination.totalPages, current + 1))}>다음</Button>
+          </div>
+        </div>
       )}
 
       <Modal title="신규 분석 DB 생성" isOpen={modalOpen} onClose={() => setModalOpen(false)}>

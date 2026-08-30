@@ -50,6 +50,16 @@ type PublicCommunityPost = {
   updatedAt: string;
 };
 
+type PublicCommunityPage = {
+  items: PublicCommunityPost[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+};
+
 type PublicSiteSettings = {
   kakaoChannelUrl: string;
   kakaoButtonLabel: string;
@@ -73,6 +83,14 @@ function usePublishedCommunityPosts() {
   return useQuery({
     queryKey: ['publishedCommunityPosts'],
     queryFn: () => fetchPublicData<PublicCommunityPost[]>('/api/community-posts'),
+    staleTime: 15_000,
+  });
+}
+
+function usePublishedCommunityPage(page: number) {
+  return useQuery({
+    queryKey: ['publishedCommunityPosts', page],
+    queryFn: () => fetchPublicData<PublicCommunityPage>(`/api/community-posts?page=${page}`),
     staleTime: 15_000,
   });
 }
@@ -443,7 +461,10 @@ function CommunitySubmissionForm() {
 }
 
 function CommunityPage() {
-  const { data: posts = [], isLoading, isError } = usePublishedCommunityPosts();
+  const [page, setPage] = useState(1);
+  const { data, isLoading, isError } = usePublishedCommunityPage(page);
+  const posts = data?.items || [];
+  const pagination = data?.pagination;
   const { data: reviews = [] } = usePublishedReviews();
   const members = Array.from(new Set(posts.map((post) => post.authorName)));
   return (
@@ -461,7 +482,7 @@ function CommunityPage() {
             </div>
             <div className="community-page-stats">
                <div><strong>{members.length}</strong><span>최근 참여 회원</span></div>
-               <div><strong>{posts.length}</strong><span>공개된 토론</span></div>
+                <div><strong>{pagination?.total ?? posts.length}</strong><span>공개된 토론</span></div>
                <div><strong>{reviews.length}</strong><span>공개된 당첨 후기</span></div>
             </div>
           </div>
@@ -485,6 +506,13 @@ function CommunityPage() {
               {!isLoading && !isError && posts.length === 0 && <div className="public-empty">현재 공개된 고객 게시글이 없습니다. 첫 이야기를 남겨주세요.</div>}
               {isError && <div className="public-empty public-error">게시글을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.</div>}
             </div>
+            {pagination && pagination.total > 0 && (
+              <div className="public-pagination" aria-label="커뮤니티 페이지 이동">
+                <button className="outline-button" type="button" disabled={page <= 1} onClick={() => setPage((current) => Math.max(1, current - 1))}>이전</button>
+                <span>총 {pagination.total.toLocaleString()}개 · {pagination.page} / {pagination.totalPages} 페이지</span>
+                <button className="outline-button" type="button" disabled={page >= pagination.totalPages} onClick={() => setPage((current) => Math.min(pagination.totalPages, current + 1))}>다음</button>
+              </div>
+            )}
             <div className="community-submit-card">
               <span className="mono gold">SHARE YOUR STANDARD</span>
               <h3>나의 분석 기준을<br />함께 나눠주세요.</h3>
@@ -501,7 +529,7 @@ function CommunityPage() {
               <p className="section-copy">멤버십 가입 후 커뮤니티에서 회차별 분석 리포트와 회원들의 조합을 함께 확인할 수 있습니다.</p>
             </div>
             <div className="community-lounge-card">
-               <div className="community-side-top"><div><span className="mono muted">RECENT MEMBERS</span><h4>최근 글을 남긴 회원</h4></div><span className="online">공개 {posts.length}</span></div>
+                <div className="community-side-top"><div><span className="mono muted">RECENT MEMBERS</span><h4>최근 글을 남긴 회원</h4></div><span className="online">공개 {pagination?.total ?? posts.length}</span></div>
                <div><div className="avatars">{members.slice(0, 5).map((name) => <span className="avatar" key={name}>{initials(name)}</span>)}</div><small>{members.length > 0 ? `${members.length}명의 실제 회원 기록이 공개되어 있습니다.` : '공개된 참여 기록이 아직 없습니다.'}</small></div>
             </div>
           </div>

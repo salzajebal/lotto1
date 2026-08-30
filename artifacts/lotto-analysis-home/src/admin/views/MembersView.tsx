@@ -24,8 +24,11 @@ export default function MembersView() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [gradeFilter, setGradeFilter] = useState<number>(0);
+  const [page, setPage] = useState(1);
   
-  const { data: members, isLoading } = useMembers({ search: debouncedSearch, status: statusFilter, gradeId: gradeFilter });
+  const { data, isLoading } = useMembers({ search: debouncedSearch, status: statusFilter, gradeId: gradeFilter, page });
+  const members = data?.items || [];
+  const pagination = data?.pagination;
   const { data: grades } = useGrades();
   const { data: staffList } = useStaff();
 
@@ -105,18 +108,18 @@ export default function MembersView() {
             placeholder="아이디, 이름, 전화번호 검색..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && setDebouncedSearch(search)}
-            onBlur={() => setDebouncedSearch(search)}
+            onKeyDown={(e) => { if (e.key === 'Enter') { setDebouncedSearch(search); setPage(1); } }}
+            onBlur={() => { setDebouncedSearch(search); setPage(1); }}
           />
         </div>
-        <Select className="w-full sm:w-48" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+        <Select className="w-full sm:w-48" value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }}>
           <option value="all">전체 상태</option>
            <option value="pending">승인 대기</option>
            <option value="active">승인 완료</option>
           <option value="inactive">비활성</option>
            <option value="rejected">반려</option>
         </Select>
-        <Select className="w-full sm:w-48" value={gradeFilter} onChange={e => setGradeFilter(Number(e.target.value))}>
+        <Select className="w-full sm:w-48" value={gradeFilter} onChange={e => { setGradeFilter(Number(e.target.value)); setPage(1); }}>
           <option value={0}>전체 등급</option>
           {grades?.map((g: any) => <option key={g.id} value={g.id}>{g.name}</option>)}
         </Select>
@@ -179,6 +182,16 @@ export default function MembersView() {
             )}
           </tbody>
         </Table>
+      )}
+
+      {pagination && pagination.total > 0 && (
+        <div className="flex items-center justify-between rounded-lg border border-[var(--ad-border)] bg-[var(--ad-panel)] px-4 py-3">
+          <p className="text-xs text-[var(--ad-muted)]">총 {pagination.total.toLocaleString()}명 · {pagination.page} / {pagination.totalPages} 페이지</p>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((current) => Math.max(1, current - 1))}>이전</Button>
+            <Button variant="outline" size="sm" disabled={page >= pagination.totalPages} onClick={() => setPage((current) => Math.min(pagination.totalPages, current + 1))}>다음</Button>
+          </div>
+        </div>
       )}
 
        <Modal title="회원 상세정보" isOpen={Boolean(detailMember)} onClose={() => setDetailMember(null)}>

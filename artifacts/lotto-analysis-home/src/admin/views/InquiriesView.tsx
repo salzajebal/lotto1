@@ -5,7 +5,10 @@ import { Loader2, MessageCircle, Send, Plus } from 'lucide-react';
 
 export default function InquiriesView({ user }: { user: { role: string } }) {
   const [statusFilter, setStatusFilter] = useState('all');
-  const { data: inquiries, isLoading } = useInquiries({ status: statusFilter !== 'all' ? statusFilter : undefined });
+  const [page, setPage] = useState(1);
+  const { data, isLoading } = useInquiries({ status: statusFilter !== 'all' ? statusFilter : undefined, page });
+  const inquiries = data?.items || [];
+  const pagination = data?.pagination;
   const { data: staffList } = useStaff();
   
   const createInquiry = useCreateInquiry();
@@ -115,7 +118,7 @@ export default function InquiriesView({ user }: { user: { role: string } }) {
           </div>
           <div className="flex items-center gap-2">
             <Button onClick={() => setCreateModalOpen(true)} className="gap-1.5"><Plus size={15} /> 새 문의 등록</Button>
-            <Select className="w-32" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+            <Select className="w-32" value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }}>
               <option value="all">전체 상태</option>
               <option value="new">신규</option>
               <option value="in_progress">진행중</option>
@@ -164,6 +167,15 @@ export default function InquiriesView({ user }: { user: { role: string } }) {
             </div>
           )}
         </Card>
+        {pagination && pagination.total > 0 && (
+          <div className="flex items-center justify-between rounded-lg border border-[var(--ad-border)] bg-[var(--ad-panel)] px-4 py-3">
+            <p className="text-xs text-[var(--ad-muted)]">총 {pagination.total.toLocaleString()}개 · {pagination.page} / {pagination.totalPages} 페이지</p>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((current) => Math.max(1, current - 1))}>이전</Button>
+              <Button variant="outline" size="sm" disabled={page >= pagination.totalPages} onClick={() => setPage((current) => Math.min(pagination.totalPages, current + 1))}>다음</Button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Detail Panel */}

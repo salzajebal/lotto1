@@ -773,22 +773,33 @@ router.get("/admin/members", async (req, res): Promise<void> => {
   const search = text(req.query.search);
   const status = text(req.query.status);
   const gradeId = int(req.query.gradeId, 0);
+  const page = Math.max(1, int(req.query.page, 1));
+  const limit = 10;
   const filters = [];
   if (search) filters.push(or(ilike(membersTable.username, `%${search}%`), ilike(membersTable.name, `%${search}%`), ilike(membersTable.phone, `%${search}%`), ilike(membersTable.email, `%${search}%`)));
   if (status && status !== "all") filters.push(eq(membersTable.status, status));
   if (gradeId) filters.push(eq(membersTable.gradeId, gradeId));
   if (!isOwner(req)) filters.push(eq(membersTable.assignedStaffId, req.adminUser!.id));
-  const rows = await db
-    .select({ member: membersTable, gradeName: memberGradesTable.name, staffName: adminUsersTable.name })
-    .from(membersTable)
-    .leftJoin(memberGradesTable, eq(membersTable.gradeId, memberGradesTable.id))
-    .leftJoin(adminUsersTable, eq(membersTable.assignedStaffId, adminUsersTable.id))
-    .where(filters.length ? and(...filters) : undefined)
-    .orderBy(desc(membersTable.createdAt));
-  res.json(rows.map(({ member, gradeName, staffName }) => {
-    const { passwordHash: _passwordHash, ...safeMember } = member;
-    return { ...safeMember, gradeName, staffName };
-  }));
+  const where = filters.length ? and(...filters) : undefined;
+  const [[count], rows] = await Promise.all([
+    db.select({ count: sql<number>`count(*)::int` }).from(membersTable).where(where),
+    db.select({ member: membersTable, gradeName: memberGradesTable.name, staffName: adminUsersTable.name })
+      .from(membersTable)
+      .leftJoin(memberGradesTable, eq(membersTable.gradeId, memberGradesTable.id))
+      .leftJoin(adminUsersTable, eq(membersTable.assignedStaffId, adminUsersTable.id))
+      .where(where)
+      .orderBy(desc(membersTable.createdAt))
+      .limit(limit)
+      .offset((page - 1) * limit),
+  ]);
+  const total = count?.count ?? 0;
+  res.json({
+    items: rows.map(({ member, gradeName, staffName }) => {
+      const { passwordHash: _passwordHash, ...safeMember } = member;
+      return { ...safeMember, gradeName, staffName };
+    }),
+    pagination: { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) },
+  });
 });
 
 router.post("/admin/members", async (req, res): Promise<void> => {
@@ -1040,7 +1051,12 @@ router.delete("/admin/grades/:id", requireOwner, async (req, res): Promise<void>
 });
 
 router.get("/admin/databases", async (req, res): Promise<void> => {
-  const rows = await db.select({
+  const page = Math.max(1, int(req.query.page, 1));
+  const limit = 10;
+  const where = isOwner(req) ? undefined : eq(analysisDatabasesTable.assignedStaffId, req.adminUser!.id);
+  const [[count], rows] = await Promise.all([
+    db.select({ count: sql<number>`count(*)::int` }).from(analysisDatabasesTable).where(where),
+    db.select({
     database: analysisDatabasesTable,
     staffName: adminUsersTable.name,
     entryCount: sql<number>`(
@@ -1048,12 +1064,19 @@ router.get("/admin/databases", async (req, res): Promise<void> => {
       from ${analysisDatabaseRowsTable}
       where ${analysisDatabaseRowsTable.databaseId} = ${analysisDatabasesTable.id}
     )`,
-  })
-    .from(analysisDatabasesTable)
-    .leftJoin(adminUsersTable, eq(analysisDatabasesTable.assignedStaffId, adminUsersTable.id))
-    .where(isOwner(req) ? undefined : eq(analysisDatabasesTable.assignedStaffId, req.adminUser!.id))
-    .orderBy(desc(analysisDatabasesTable.createdAt));
-  res.json(rows.map(({ database, staffName, entryCount }) => ({ ...database, staffName, entryCount })));
+    })
+      .from(analysisDatabasesTable)
+      .leftJoin(adminUsersTable, eq(analysisDatabasesTable.assignedStaffId, adminUsersTable.id))
+      .where(where)
+      .orderBy(desc(analysisDatabasesTable.createdAt))
+      .limit(limit)
+      .offset((page - 1) * limit),
+  ]);
+  const total = count?.count ?? 0;
+  res.json({
+    items: rows.map(({ database, staffName, entryCount }) => ({ ...database, staffName, entryCount })),
+    pagination: { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) },
+  });
 });
 
 router.post("/admin/databases", requireOwner, async (req, res): Promise<void> => {
@@ -1179,14 +1202,26 @@ router.post("/admin/databases/:id/assign", requireOwner, async (req, res): Promi
 
 router.get("/admin/inquiries", async (req, res): Promise<void> => {
   const status = text(req.query.status);
+  const page = Math.max(1, int(req.query.page, 1));
+  const limit = 10;
   const filters = status && status !== "all" ? [eq(supportInquiriesTable.status, status)] : [];
   if (!isOwner(req)) filters.push(eq(supportInquiriesTable.assignedStaffId, req.adminUser!.id));
-  const rows = await db.select({ inquiry: supportInquiriesTable, staffName: adminUsersTable.name })
-    .from(supportInquiriesTable)
-    .leftJoin(adminUsersTable, eq(supportInquiriesTable.assignedStaffId, adminUsersTable.id))
-    .where(filters.length ? and(...filters) : undefined)
-    .orderBy(desc(supportInquiriesTable.priority), desc(supportInquiriesTable.createdAt));
-  res.json(rows.map(({ inquiry, staffName }) => ({ ...inquiry, staffName })));
+  const where = filters.length ? and(...filters) : undefined;
+  const [[count], rows] = await Promise.all([
+    db.select({ count: sql<number>`count(*)::int` }).from(supportInquiriesTable).where(where),
+    db.select({ inquiry: supportInquiriesTable, staffName: adminUsersTable.name })
+      .from(supportInquiriesTable)
+      .leftJoin(adminUsersTable, eq(supportInquiriesTable.assignedStaffId, adminUsersTable.id))
+      .where(where)
+      .orderBy(desc(supportInquiriesTable.priority), desc(supportInquiriesTable.createdAt))
+      .limit(limit)
+      .offset((page - 1) * limit),
+  ]);
+  const total = count?.count ?? 0;
+  res.json({
+    items: rows.map(({ inquiry, staffName }) => ({ ...inquiry, staffName })),
+    pagination: { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) },
+  });
 });
 
 router.post("/admin/inquiries", async (req, res): Promise<void> => {
@@ -1332,8 +1367,21 @@ router.delete("/admin/reviews/:id", requireOwner, async (req, res): Promise<void
   res.json({ ok: true });
 });
 
-router.get("/admin/community-posts", requireOwner, async (_req, res): Promise<void> => {
-  res.json(await db.select().from(communityPostsTable).orderBy(desc(communityPostsTable.createdAt)));
+router.get("/admin/community-posts", requireOwner, async (req, res): Promise<void> => {
+  const page = Math.max(1, int(req.query.page, 1));
+  const limit = 10;
+  const [[count], posts] = await Promise.all([
+    db.select({ count: sql<number>`count(*)::int` }).from(communityPostsTable),
+    db.select().from(communityPostsTable)
+      .orderBy(desc(communityPostsTable.createdAt))
+      .limit(limit)
+      .offset((page - 1) * limit),
+  ]);
+  const total = count?.count ?? 0;
+  res.json({
+    items: posts,
+    pagination: { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) },
+  });
 });
 
 router.post("/admin/community-posts", requireOwner, async (req, res): Promise<void> => {
@@ -1510,8 +1558,8 @@ router.post("/community-posts", publicWriteRateLimit, async (req, res): Promise<
   res.status(201).json({ id: post.id, message: "게시글이 접수되었습니다." });
 });
 
-router.get("/community-posts", async (_req, res): Promise<void> => {
-  const posts = await db.select({
+router.get("/community-posts", async (req, res): Promise<void> => {
+  const fields = {
     id: communityPostsTable.id,
     authorName: communityPostsTable.authorName,
     category: communityPostsTable.category,
@@ -1520,7 +1568,27 @@ router.get("/community-posts", async (_req, res): Promise<void> => {
     replyCount: communityPostsTable.replyCount,
     createdAt: communityPostsTable.createdAt,
     updatedAt: communityPostsTable.updatedAt,
-  }).from(communityPostsTable)
+  };
+  const requestedPage = req.query.page ? Math.max(1, int(req.query.page, 1)) : null;
+  if (requestedPage) {
+    const limit = 10;
+    const [[count], posts] = await Promise.all([
+      db.select({ count: sql<number>`count(*)::int` }).from(communityPostsTable)
+        .where(eq(communityPostsTable.status, "published")),
+      db.select(fields).from(communityPostsTable)
+        .where(eq(communityPostsTable.status, "published"))
+        .orderBy(desc(communityPostsTable.createdAt))
+        .limit(limit)
+        .offset((requestedPage - 1) * limit),
+    ]);
+    const total = count?.count ?? 0;
+    res.json({
+      items: posts,
+      pagination: { page: requestedPage, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) },
+    });
+    return;
+  }
+  const posts = await db.select(fields).from(communityPostsTable)
     .where(eq(communityPostsTable.status, "published"))
     .orderBy(desc(communityPostsTable.createdAt))
     .limit(50);
