@@ -504,6 +504,25 @@ router.patch("/admin/members/:id", async (req, res): Promise<void> => {
   res.json(member);
 });
 
+router.delete("/admin/members/:id", async (req, res): Promise<void> => {
+  const id = int(req.params.id);
+  if (!(await canAccessMember(req, id))) {
+    res.status(403).json({ error: "이 회원을 삭제할 권한이 없습니다." });
+    return;
+  }
+  const [member] = await db.delete(membersTable).where(eq(membersTable.id, id)).returning({
+    id: membersTable.id,
+    name: membersTable.name,
+    username: membersTable.username,
+  });
+  if (!member) {
+    res.status(404).json({ error: "회원을 찾을 수 없습니다." });
+    return;
+  }
+  await recordEvent(req, "delete", "member", id, member.username ? `${member.username} · ${member.name}` : member.name);
+  res.json({ ok: true });
+});
+
 router.get("/admin/staff", async (req, res): Promise<void> => {
   if (!isOwner(req)) {
     const staff = await db.select({

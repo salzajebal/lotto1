@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useMembers, useGrades, useStaff, useCreateMember, useUpdateMember } from '../api';
+import { useMembers, useGrades, useStaff, useCreateMember, useUpdateMember, useDeleteMember } from '../api';
 import { Card, Table, Th, Td, Badge, Button, Input, Select, Modal, Label, Textarea } from '../components/UI';
-import { Search, Plus, Edit2, Eye, Loader2 } from 'lucide-react';
+import { Search, Plus, Edit2, Eye, Trash2, Loader2 } from 'lucide-react';
 
 const memberStatusLabels: Record<string, string> = {
   pending: '승인 대기',
@@ -35,6 +35,7 @@ export default function MembersView() {
   
   const createMember = useCreateMember();
   const updateMember = useUpdateMember();
+  const deleteMember = useDeleteMember();
 
   const [form, setForm] = useState({
     username: '', name: '', email: '', phone: '', gradeId: 0, status: 'active', assignedStaffId: 0, paymentAmount: 0, monthlyRevenue: 0, notes: ''
@@ -72,6 +73,16 @@ export default function MembersView() {
     } else {
       createMember.mutate(payload, { onSuccess: () => setModalOpen(false) });
     }
+  };
+
+  const handleDelete = (member: any) => {
+    const identifier = member.username ? `아이디 ${member.username}` : '회원 정보';
+    if (!window.confirm(`${member.name} 회원(${identifier})을 삭제하시겠습니까?\n삭제 후에는 복구할 수 없습니다.`)) return;
+    deleteMember.mutate(member.id, {
+      onSuccess: () => {
+        if (detailMember?.id === member.id) setDetailMember(null);
+      },
+    });
   };
 
   return (
@@ -158,6 +169,7 @@ export default function MembersView() {
                    <div className="flex justify-end gap-1">
                      <Button variant="outline" size="sm" onClick={() => setDetailMember(m)} title="상세 보기" aria-label={`${m.name} 상세 보기`}><Eye size={14} /></Button>
                      <Button variant="ghost" size="sm" onClick={() => openModal(m)} title="수정" aria-label={`${m.name} 수정`}><Edit2 size={14} /></Button>
+                     <Button variant="ghost" size="sm" onClick={() => handleDelete(m)} title="회원 삭제" aria-label={`${m.name} 회원 삭제`} disabled={deleteMember.isPending}><Trash2 size={14} /></Button>
                    </div>
                 </Td>
               </tr>

@@ -118,6 +118,17 @@ export function useUpdateMember() {
   });
 }
 
+export function useDeleteMember() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => fetcher(`${API_BASE}/members/${id}`, { method: 'DELETE' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminMembers'] });
+      queryClient.invalidateQueries({ queryKey: ['adminDashboard'] });
+    },
+  });
+}
+
 export function useStaff() {
   return useQuery({ queryKey: ['adminStaff'], queryFn: () => fetcher(`${API_BASE}/staff`) });
 }
