@@ -15,6 +15,9 @@ const photoStories = [
   { image: interviewImageFour, draw: '800회', amount: '1,632,246,205원', label: '당첨 현장 사진' },
 ];
 const ticketProofDetails = [
+  { draw: '1239회', issuedAt: '2026/08/31' },
+  { draw: '1238회', issuedAt: '2026/08/24' },
+  { draw: '1237회', issuedAt: '2026/08/18' },
   { draw: '1044회', issuedAt: '2022/12/03' },
   { draw: '841회', issuedAt: '2023/07/15' },
   { draw: '1118회', issuedAt: '2023/05/04' },

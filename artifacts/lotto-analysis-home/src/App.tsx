@@ -14,6 +14,9 @@ import winningTicketImageOne from '@assets/image_1788152850744.png';
 import winningTicketImageTwo from '@assets/image_1788152853222.png';
 import winningTicketImageFour from '@assets/image_1788152859622.png';
 import winningTicketImageFive from '@assets/image_1788152866212.png';
+import winningTicketImage1239 from '@assets/image_1788167699776.png';
+import winningTicketImage1237 from '@assets/image_1788167702172.png';
+import winningTicketImage1238 from '@assets/image_1788167705450.png';
 import heroStoryImageOne from '@assets/image_1788153395386.png';
 import heroStoryImageTwo from '@assets/image_1788153408517.png';
 import heroStoryImageThree from '@assets/image_1788153415880.png';
@@ -34,6 +37,9 @@ const customerTrustBadges = [
   { src: `${import.meta.env.BASE_URL}trust-brand-awards-no-bg.png`, alt: '고객이신뢰하는브랜드대상', label: '고객이신뢰하는브랜드대상' },
 ];
 const winningTicketImages = [
+  winningTicketImage1239,
+  winningTicketImage1238,
+  winningTicketImage1237,
   winningTicketImageOne,
   winningTicketImageTwo,
   winningTicketImageFour,
@@ -44,6 +50,7 @@ const heroStoryImages = [
   { image: heroStoryImageOne, draw: '800회', title: '1등 당첨자 인터뷰' },
   { image: heroStoryImageTwo, draw: '841회', title: '당첨 용지 증빙' },
   { image: heroStoryImageThree, draw: '912회', title: '1등 당첨자 인터뷰' },
+  { image: winningTicketImage1239, draw: '1239회', title: '당첨 용지 증빙' },
 ];
 
 type ModalName = 'review' | 'support' | 'auth' | 'membership' | 'video' | null;
