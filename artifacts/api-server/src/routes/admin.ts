@@ -2,6 +2,8 @@ import { Router, type IRouter, type Request, type Response, type NextFunction } 
 import cookieParser from "cookie-parser";
 import multer from "multer";
 import { createHash, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
+import { createRequire } from "node:module";
+import { pathToFileURL } from "node:url";
 import { Worker } from "node:worker_threads";
 import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { z } from "zod/v4";
@@ -108,10 +110,10 @@ type ImportRowError = {
 };
 
 const importAliases: Record<keyof ImportMapping, string[]> = {
-  phone: ["전화번호", "연락처", "휴대폰", "휴대전화", "phone", "mobile"],
-  name: ["이름", "성명", "회원명", "name", "membername"],
-  amount: ["금액", "당첨금액", "당첨금", "amount", "prize"],
-  date: ["날짜", "당첨일", "등록일", "일자", "date", "recordeddate"],
+  phone: ["전화번호", "연락처", "휴대폰", "휴대전화", "회원아이디", "아이디", "phone", "mobile", "mb_id", "mbid"],
+  name: ["이름", "성명", "회원명", "name", "membername", "mb_name", "mbname"],
+  amount: ["금액", "당첨금액", "당첨금", "amount", "prize", "hand_over_old_price", "handoveroldprice"],
+  date: ["날짜", "당첨일", "등록일", "일자", "date", "recordeddate", "payment_date", "paymentdate"],
 };
 
 const normalizeHeader = (value: unknown) =>
@@ -146,37 +148,43 @@ const validateExcelFile = (file: Express.Multer.File | undefined, res: Response)
 };
 
 const excelWorkerSource = `
-  const { parentPort, workerData } = require("node:worker_threads");
-  const XLSX = require("xlsx");
-  try {
-    const workbook = XLSX.read(workerData.buffer, {
-      type: "buffer",
-      cellDates: false,
-      dense: true,
-      sheetRows: workerData.maxRows + 2,
-    });
-    const sheetName = workbook.SheetNames[0];
-    if (!sheetName) throw new Error("엑셀 파일에 읽을 수 있는 시트가 없습니다.");
-    const sheet = workbook.Sheets[sheetName];
-    const range = sheet["!ref"] ? XLSX.utils.decode_range(sheet["!ref"]) : null;
-    if (range && range.e.c + 1 > workerData.maxColumns) {
-      throw new Error("엑셀 파일의 컬럼 수가 너무 많습니다.");
+  (async () => {
+    const { parentPort, workerData } = await import("node:worker_threads");
+    try {
+      const xlsxModule = await import(workerData.xlsxModuleUrl);
+      const XLSX = xlsxModule.default ?? xlsxModule;
+      const workbook = XLSX.read(workerData.buffer, {
+        type: "buffer",
+        cellDates: false,
+        dense: true,
+        sheetRows: workerData.maxRows + 2,
+      });
+      const sheetName = workbook.SheetNames[0];
+      if (!sheetName) throw new Error("엑셀 파일에 읽을 수 있는 시트가 없습니다.");
+      const sheet = workbook.Sheets[sheetName];
+      const range = sheet["!ref"] ? XLSX.utils.decode_range(sheet["!ref"]) : null;
+      if (range && range.e.c + 1 > workerData.maxColumns) {
+        throw new Error("엑셀 파일의 컬럼 수가 너무 많습니다.");
+      }
+      const rows = XLSX.utils.sheet_to_json(sheet, {
+        header: 1,
+        raw: false,
+        defval: "",
+        blankrows: false,
+      }).map((row) => row.map((value) => String(value ?? "").trim()));
+      if (rows.length < 2) throw new Error("첫 번째 행에 컬럼명이 있고, 그 아래에 데이터가 있어야 합니다.");
+      if (rows.length - 1 > workerData.maxRows) {
+        throw new Error("한 번에 최대 " + workerData.maxRows.toLocaleString() + "행까지 등록할 수 있습니다.");
+      }
+      parentPort.postMessage({ ok: true, data: { sheetName, rows } });
+    } catch (error) {
+      parentPort.postMessage({ ok: false, error: error instanceof Error ? error.message : "엑셀 파일을 읽을 수 없습니다." });
     }
-    const rows = XLSX.utils.sheet_to_json(sheet, {
-      header: 1,
-      raw: false,
-      defval: "",
-      blankrows: false,
-    }).map((row) => row.map((value) => String(value ?? "").trim()));
-    if (rows.length < 2) throw new Error("첫 번째 행에 컬럼명이 있고, 그 아래에 데이터가 있어야 합니다.");
-    if (rows.length - 1 > workerData.maxRows) {
-      throw new Error("한 번에 최대 " + workerData.maxRows.toLocaleString() + "행까지 등록할 수 있습니다.");
-    }
-    parentPort.postMessage({ ok: true, data: { sheetName, rows } });
-  } catch (error) {
-    parentPort.postMessage({ ok: false, error: error instanceof Error ? error.message : "엑셀 파일을 읽을 수 없습니다." });
-  }
+  })();
 `;
+
+const runtimeRequire = createRequire(import.meta.url);
+const xlsxModuleUrl = pathToFileURL(runtimeRequire.resolve("xlsx")).href;
 
 const readExcel = async (buffer: Buffer): Promise<{ sheetName: string; headers: string[]; rows: string[][] }> => {
   if (activeExcelParses >= 1) throw new Error("다른 엑셀 파일을 처리 중입니다. 잠시 후 다시 시도해주세요.");
@@ -188,7 +196,7 @@ const readExcel = async (buffer: Buffer): Promise<{ sheetName: string; headers: 
     const parsed = await new Promise<{ sheetName: string; rows: string[][] }>((resolve, reject) => {
       const worker = new Worker(excelWorkerSource, {
         eval: true,
-        workerData: { buffer, maxRows: MAX_IMPORT_ROWS, maxColumns: MAX_IMPORT_COLUMNS },
+        workerData: { buffer, maxRows: MAX_IMPORT_ROWS, maxColumns: MAX_IMPORT_COLUMNS, xlsxModuleUrl },
         resourceLimits: { maxOldGenerationSizeMb: 192, maxYoungGenerationSizeMb: 32 },
       });
       const timeout = setTimeout(() => {
@@ -226,8 +234,7 @@ const cellText = (value: unknown) => String(value ?? "").trim();
 const parseImportDate = (value: unknown) => {
   const raw = cellText(value).replace(/[./]/g, "-").replace(/\s+/g, "");
   const serial = Number(raw);
-  if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(raw)) {
-    const [year, month, day] = raw.split("-").map(Number);
+  const formatDate = (year: number, month: number, day: number) => {
     const date = new Date(Date.UTC(year, month - 1, day));
     if (
       year >= 1900
@@ -238,13 +245,20 @@ const parseImportDate = (value: unknown) => {
     ) {
       return `${year.toString().padStart(4, "0")}-${month.toString().padStart(2, "0")}-${day.toString().padStart(2, "0")}`;
     }
+    return null;
+  };
+  if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(raw)) {
+    const [year, month, day] = raw.split("-").map(Number);
+    return formatDate(year, month, day);
+  }
+  if (/^\d{1,2}-\d{1,2}-\d{2,4}$/.test(raw)) {
+    const [month, day, rawYear] = raw.split("-").map(Number);
+    const year = rawYear < 100 ? 2000 + rawYear : rawYear;
+    return formatDate(year, month, day);
   }
   if (Number.isFinite(serial) && serial > 1) {
     const date = new Date(Date.UTC(1899, 11, 30) + Math.floor(serial) * 86_400_000);
-    const year = date.getUTCFullYear();
-    if (Number.isFinite(date.getTime()) && year >= 1900 && year <= 2100) {
-      return `${year.toString().padStart(4, "0")}-${(date.getUTCMonth() + 1).toString().padStart(2, "0")}-${date.getUTCDate().toString().padStart(2, "0")}`;
-    }
+    if (Number.isFinite(date.getTime())) return formatDate(date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate());
   }
   return null;
 };
@@ -260,8 +274,13 @@ const parseImportPhone = (value: unknown) => {
   const raw = cellText(value);
   if (!/^[\d\s()-]+$/.test(raw)) return null;
   const phone = raw.replace(/\D/g, "");
+  if (/^10\d{8}$/.test(phone)) return `0${phone}`;
   return /^010\d{8}$/.test(phone) ? phone : null;
 };
+
+const isPlaceholderImportRow = (identifier: string, memberName: string) =>
+  /^(?:test\d*|dummy\d*|fake\d*|sample\d*)$/i.test(identifier)
+  || /테스트|더미|샘플|가상/.test(memberName);
 
 const parseImportRows = (rows: unknown[][], mapping: ImportMapping) => {
   const validRows: ParsedImportRow[] = [];
@@ -271,15 +290,25 @@ const parseImportRows = (rows: unknown[][], mapping: ImportMapping) => {
 
   rows.forEach((row, index) => {
     const rowNumber = index + 2;
-    const phone = parseImportPhone(row[mapping.phone]);
+    const identifier = cellText(row[mapping.phone]);
     const memberName = cellText(row[mapping.name]);
+    if (isPlaceholderImportRow(identifier, memberName)) {
+      errors.push({ row: rowNumber, message: "테스트·허수 데이터로 제외했습니다." });
+      return;
+    }
+    const phone = parseImportPhone(identifier);
     const amount = parseImportAmount(row[mapping.amount]);
-    const recordedDate = parseImportDate(row[mapping.date]);
+    const rawDate = cellText(row[mapping.date]);
+    const recordedDate = parseImportDate(rawDate);
     const rowErrors: string[] = [];
     if (!phone) rowErrors.push("전화번호는 010으로 시작하는 휴대전화 번호 11자리여야 합니다.");
     if (!memberName || memberName.length > 100) rowErrors.push("이름을 입력하고 100자 이내로 작성해주세요.");
     if (amount == null) rowErrors.push("금액은 0 이상의 숫자로 입력해주세요.");
-    if (!recordedDate) rowErrors.push("날짜는 YYYY-MM-DD 형식으로 입력해주세요.");
+    if (!recordedDate) {
+      rowErrors.push(rawDate === "0000-00-00"
+        ? "0000-00-00인 미완료 날짜 행으로 제외했습니다."
+        : "날짜는 YYYY-MM-DD 형식으로 입력해주세요.");
+    }
     if (rowErrors.length) {
       errors.push({ row: rowNumber, message: rowErrors.join(" ") });
       return;

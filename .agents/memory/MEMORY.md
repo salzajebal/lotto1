@@ -1,3 +1,4 @@
 - [신뢰 배지 표현](trust-badge-policy.md) — 공식 자산이 확인되기 전에는 인증을 암시하는 로고 대신 범용 아이콘과 중립 문구를 사용한다.
 - [캔버스 라이브 전환](canvas-live-transition.md) — iframe을 live로 바꿀 때 업데이트와 정렬 작업은 분리해 검증 실패를 피한다.
 - [DB 스키마 드리프트](db-schema-drift.md) — 자동 push가 기존 관리자 테이블 삭제를 제안하면 강제 진행하지 말고 필요한 변경만 안전하게 적용한다.
+- [엑셀 워커 모듈 로딩](excel-worker-module-loading.md) — eval 워커에서는 패키지명 require 대신 메인 스레드가 해석한 파일 URL을 import한다.
