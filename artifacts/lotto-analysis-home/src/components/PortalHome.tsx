@@ -17,7 +17,6 @@ const photoStories = [
 const ticketProofDetails = [
   { draw: '1044회', issuedAt: '2022/12/03' },
   { draw: '841회', issuedAt: '2023/07/15' },
-  { draw: '1105회', issuedAt: '2024/02/03' },
   { draw: '1118회', issuedAt: '2023/05/04' },
   { draw: '1222회', issuedAt: '2026/05/02' },
 ];

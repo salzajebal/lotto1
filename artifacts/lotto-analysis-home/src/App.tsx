@@ -12,7 +12,6 @@ import {
 import lottoBallsBackground from '@assets/ChatGPT_Image_2026년_8월_29일_오전_03_28_36_1787999327234.png';
 import winningTicketImageOne from '@assets/image_1788152850744.png';
 import winningTicketImageTwo from '@assets/image_1788152853222.png';
-import winningTicketImageThree from '@assets/image_1788152855899.png';
 import winningTicketImageFour from '@assets/image_1788152859622.png';
 import winningTicketImageFive from '@assets/image_1788152866212.png';
 import heroStoryImageOne from '@assets/image_1788153395386.png';
@@ -37,7 +36,6 @@ const customerTrustBadges = [
 const winningTicketImages = [
   winningTicketImageOne,
   winningTicketImageTwo,
-  winningTicketImageThree,
   winningTicketImageFour,
   winningTicketImageFive,
 ];
