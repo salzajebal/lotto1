@@ -269,17 +269,64 @@ export function useAssignDatabaseRows() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   return useMutation({
-    mutationFn: ({ databaseId, rowIds, staffId }: { databaseId: number; rowIds: number[]; staffId: number }) =>
-      fetcher(`${API_BASE}/databases/${databaseId}/rows/assign`, {
-        method: 'POST',
-        body: JSON.stringify({ rowIds, staffId }),
-      }),
+    mutationFn: async ({ databaseId, rowIds, staffId }: { databaseId: number; rowIds: number[]; staffId: number }) => {
+      let assignedCount = 0;
+      for (let index = 0; index < rowIds.length; index += 5000) {
+        const result = await fetcher(`${API_BASE}/databases/${databaseId}/rows/assign`, {
+          method: 'POST',
+          body: JSON.stringify({ rowIds: rowIds.slice(index, index + 5000), staffId }),
+        }) as { assignedCount: number };
+        assignedCount += result.assignedCount;
+      }
+      return { assignedCount };
+    },
     onSuccess: (result: { assignedCount: number }, variables) => {
       queryClient.invalidateQueries({ queryKey: ['adminDatabaseRows', variables.databaseId] });
       queryClient.invalidateQueries({ queryKey: ['adminDatabases'] });
       toast({ title: '데이터 행 배정 완료', description: `${result.assignedCount.toLocaleString()}건을 직원에게 배정했습니다.` });
     },
     onError: (err: Error) => toast({ title: '데이터 행 배정 실패', description: err.message, variant: 'destructive' }),
+  });
+}
+
+export function useUnassignDatabaseRows() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async ({ databaseId, rowIds }: { databaseId: number; rowIds: number[] }) => {
+      let unassignedCount = 0;
+      for (let index = 0; index < rowIds.length; index += 5000) {
+        const result = await fetcher(`${API_BASE}/databases/${databaseId}/rows/unassign`, {
+          method: 'POST',
+          body: JSON.stringify({ rowIds: rowIds.slice(index, index + 5000) }),
+        }) as { unassignedCount: number };
+        unassignedCount += result.unassignedCount;
+      }
+      return { unassignedCount };
+    },
+    onSuccess: (result: { unassignedCount: number }, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['adminDatabaseRows', variables.databaseId] });
+      queryClient.invalidateQueries({ queryKey: ['adminDatabases'] });
+      toast({ title: '행 배정 취소 완료', description: `${result.unassignedCount.toLocaleString()}건을 미배정 상태로 되돌렸습니다.` });
+    },
+    onError: (err: Error) => toast({ title: '행 배정 취소 실패', description: err.message, variant: 'destructive' }),
+  });
+}
+
+export function useUpdateDatabaseRowNote() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: ({ databaseId, rowId, content }: { databaseId: number; rowId: number; content: string }) =>
+      fetcher(`${API_BASE}/databases/${databaseId}/rows/${rowId}/note`, {
+        method: 'PATCH',
+        body: JSON.stringify({ content }),
+      }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['adminDatabaseRows', variables.databaseId] });
+      toast({ title: '행 메모 저장 완료', description: '해당 데이터 행의 내부 메모가 저장되었습니다.' });
+    },
+    onError: (err: Error) => toast({ title: '행 메모 저장 실패', description: err.message, variant: 'destructive' }),
   });
 }
 
@@ -313,11 +360,39 @@ export function useAssignDatabase() {
   });
 }
 
+export function useUnassignDatabase() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: ({ id }: { id: number }) =>
+      fetcher(`${API_BASE}/databases/${id}/unassign`, { method: 'POST' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminDatabases'] });
+      toast({ title: 'DB 배정 취소 완료', description: 'DB 담당자가 미배정 상태로 되돌아갔습니다.' });
+    },
+    onError: (err: Error) => toast({ title: 'DB 배정 취소 실패', description: err.message, variant: 'destructive' }),
+  });
+}
+
 export function useBulkAssignDatabases() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ databaseIds, staffId }: { databaseIds: number[], staffId: number }) => fetcher(`${API_BASE}/databases/bulk-assign`, { method: 'POST', body: JSON.stringify({ databaseIds, staffId }) }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['adminDatabases'] })
+  });
+}
+
+export function useBulkUnassignDatabases() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: ({ databaseIds }: { databaseIds: number[] }) =>
+      fetcher(`${API_BASE}/databases/bulk-unassign`, { method: 'POST', body: JSON.stringify({ databaseIds }) }),
+    onSuccess: (result: { unassignedCount: number }) => {
+      queryClient.invalidateQueries({ queryKey: ['adminDatabases'] });
+      toast({ title: 'DB 배정 취소 완료', description: `${result.unassignedCount.toLocaleString()}개 DB를 미배정 상태로 되돌렸습니다.` });
+    },
+    onError: (err: Error) => toast({ title: 'DB 배정 취소 실패', description: err.message, variant: 'destructive' }),
   });
 }
 

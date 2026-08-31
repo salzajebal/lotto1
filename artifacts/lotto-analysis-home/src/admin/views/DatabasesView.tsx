@@ -1,5 +1,13 @@
 import { useState, useMemo } from 'react';
-import { useDatabases, useStaff, useCreateDatabase, useBulkAssignDatabases, useAssignDatabase } from '../api';
+import {
+  useDatabases,
+  useStaff,
+  useCreateDatabase,
+  useBulkAssignDatabases,
+  useAssignDatabase,
+  useBulkUnassignDatabases,
+  useUnassignDatabase,
+} from '../api';
 import { Card, Table, Th, Td, Badge, Button, Input, Select, Modal, Label, Textarea } from '../components/UI';
 import DatabaseImportModal from '../components/DatabaseImportModal';
 import DatabaseRowsModal from '../components/DatabaseRowsModal';
@@ -16,6 +24,8 @@ export default function DatabasesView({ user }: { user: { role: string } }) {
   const createDb = useCreateDatabase();
   const assignDb = useAssignDatabase();
   const bulkAssign = useBulkAssignDatabases();
+  const unassignDb = useUnassignDatabase();
+  const bulkUnassign = useBulkUnassignDatabases();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState({ name: '', drawNumber: '', price: 0, notes: '' });
@@ -27,7 +37,7 @@ export default function DatabasesView({ user }: { user: { role: string } }) {
   const [targetStaffId, setTargetStaffId] = useState<number>(0);
   const [singleAssignId, setSingleAssignId] = useState<number | null>(null);
 
-  const activeStaff = useMemo(() => staffList?.filter((s: any) => s.active) || [], [staffList]);
+  const activeStaff = useMemo(() => staffList?.filter((s: any) => s.active && s.role === 'staff') || [], [staffList]);
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,6 +55,17 @@ export default function DatabasesView({ user }: { user: { role: string } }) {
       assignDb.mutate({ id: singleAssignId, staffId: targetStaffId }, { onSuccess: () => setAssignModalOpen(false) });
     } else if (selectedIds.size > 0) {
       bulkAssign.mutate({ databaseIds: Array.from(selectedIds), staffId: targetStaffId }, { onSuccess: () => { setAssignModalOpen(false); setSelectedIds(new Set()); }});
+    }
+  };
+
+  const handleUnassign = () => {
+    const databaseIds = singleAssignId ? [singleAssignId] : Array.from(selectedIds);
+    if (databaseIds.length === 0) return;
+    if (!window.confirm(`${databaseIds.length.toLocaleString()}개 DB의 담당자 배정을 취소할까요?`)) return;
+    if (singleAssignId) {
+      unassignDb.mutate({ id: singleAssignId }, { onSuccess: () => setAssignModalOpen(false) });
+    } else {
+      bulkUnassign.mutate({ databaseIds }, { onSuccess: () => { setAssignModalOpen(false); setSelectedIds(new Set()); } });
     }
   };
 
@@ -203,6 +224,14 @@ export default function DatabasesView({ user }: { user: { role: string } }) {
           </div>
           <div className="pt-2 flex justify-end gap-2">
             <Button type="button" variant="secondary" onClick={() => setAssignModalOpen(false)}>취소</Button>
+              <Button
+                type="button"
+                variant="danger"
+                onClick={handleUnassign}
+                disabled={unassignDb.isPending || bulkUnassign.isPending}
+              >
+                배정 취소
+              </Button>
             <Button type="submit" disabled={assignDb.isPending || bulkAssign.isPending}>배정 저장</Button>
           </div>
         </form>

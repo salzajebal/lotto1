@@ -83,6 +83,7 @@ export const analysisDatabaseRowsTable = pgTable("analysis_database_rows", {
   amount: integer("amount").notNull().default(0),
   recordedDate: date("recorded_date", { mode: "string" }).notNull(),
   assignedStaffId: integer("assigned_staff_id").references(() => adminUsersTable.id, { onDelete: "set null" }),
+  notes: text("notes").notNull().default(""),
   ...timestamps,
 }, (table) => ({
   uniqueRow: uniqueIndex("analysis_database_rows_unique_row_idx")

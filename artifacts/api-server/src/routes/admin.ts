@@ -481,6 +481,26 @@ async function canAccessDatabase(req: Request, databaseId: number) {
   return Boolean(assignedRow);
 }
 
+async function canAccessDatabaseRow(req: Request, databaseId: number, rowId: number) {
+  if (isOwner(req)) return true;
+  const [row] = await db.select({
+    rowId: analysisDatabaseRowsTable.id,
+    rowAssignedStaffId: analysisDatabaseRowsTable.assignedStaffId,
+    databaseAssignedStaffId: analysisDatabasesTable.assignedStaffId,
+  })
+    .from(analysisDatabaseRowsTable)
+    .innerJoin(analysisDatabasesTable, eq(analysisDatabaseRowsTable.databaseId, analysisDatabasesTable.id))
+    .where(and(
+      eq(analysisDatabaseRowsTable.id, rowId),
+      eq(analysisDatabaseRowsTable.databaseId, databaseId),
+    ))
+    .limit(1);
+  return Boolean(row && (
+    row.databaseAssignedStaffId === req.adminUser!.id
+    || row.rowAssignedStaffId === req.adminUser!.id
+  ));
+}
+
 router.use(cookieParser());
 
 const adminAccountSchema = z.object({
@@ -1177,6 +1197,17 @@ router.post("/admin/databases/bulk-assign", requireOwner, async (req, res): Prom
   res.json({ ok: true });
 });
 
+router.post("/admin/databases/bulk-unassign", requireOwner, async (req, res): Promise<void> => {
+  const body = parse(z.object({ databaseIds: z.array(z.number().int().positive()).min(1) }), req.body, res);
+  if (!body) return;
+  const updated = await db.update(analysisDatabasesTable)
+    .set({ assignedStaffId: null, updatedAt: new Date() })
+    .where(inArray(analysisDatabasesTable.id, body.databaseIds))
+    .returning({ id: analysisDatabasesTable.id });
+  await recordEvent(req, "unassign", "database", undefined, `${updated.length}개 DB 배정 취소`);
+  res.json({ ok: true, unassignedCount: updated.length });
+});
+
 router.get("/admin/databases/:id/rows", async (req, res): Promise<void> => {
   const databaseId = int(req.params.id);
   if (!(await canAccessDatabase(req, databaseId))) {
@@ -1283,6 +1314,76 @@ router.post("/admin/databases/:id/rows/assign", requireOwner, async (req, res): 
   res.json({ ok: true, assignedCount });
 });
 
+router.post("/admin/databases/:id/rows/unassign", requireOwner, async (req, res): Promise<void> => {
+  const databaseId = int(req.params.id);
+  const body = parse(z.object({
+    rowIds: z.array(z.number().int().positive()).min(1).max(5000),
+  }), req.body, res);
+  if (!body) return;
+  if (new Set(body.rowIds).size !== body.rowIds.length) {
+    res.status(400).json({ error: "중복된 데이터 행이 포함되어 있습니다." });
+    return;
+  }
+  const unassignedCount = await db.transaction(async (tx) => {
+    const [database] = await tx.select({ id: analysisDatabasesTable.id })
+      .from(analysisDatabasesTable)
+      .where(eq(analysisDatabasesTable.id, databaseId))
+      .limit(1);
+    if (!database) return null;
+    const [rowCount] = await tx.select({ count: sql<number>`count(*)::int` })
+      .from(analysisDatabaseRowsTable)
+      .where(and(
+        eq(analysisDatabaseRowsTable.databaseId, databaseId),
+        inArray(analysisDatabaseRowsTable.id, body.rowIds),
+      ));
+    if ((rowCount?.count ?? 0) !== body.rowIds.length) return -1;
+    const updated = await tx.update(analysisDatabaseRowsTable)
+      .set({ assignedStaffId: null, updatedAt: new Date() })
+      .where(and(
+        eq(analysisDatabaseRowsTable.databaseId, databaseId),
+        inArray(analysisDatabaseRowsTable.id, body.rowIds),
+      ))
+      .returning({ id: analysisDatabaseRowsTable.id });
+    return updated.length;
+  });
+  if (unassignedCount == null) {
+    res.status(404).json({ error: "분석 DB를 찾을 수 없습니다." });
+    return;
+  }
+  if (unassignedCount < 0) {
+    res.status(400).json({ error: "선택한 데이터 행을 확인해주세요." });
+    return;
+  }
+  await recordEvent(req, "unassign", "analysis_database_rows", databaseId, `${unassignedCount}건 배정 취소`);
+  res.json({ ok: true, unassignedCount });
+});
+
+router.patch("/admin/databases/:id/rows/:rowId/note", async (req, res): Promise<void> => {
+  const databaseId = int(req.params.id);
+  const rowId = int(req.params.rowId);
+  const body = parse(z.object({
+    content: z.string().max(3000, "행 메모는 3,000자 이내로 작성해주세요."),
+  }), req.body, res);
+  if (!body) return;
+  if (!(await canAccessDatabaseRow(req, databaseId, rowId))) {
+    res.status(403).json({ error: "이 데이터 행의 메모를 작성할 권한이 없습니다." });
+    return;
+  }
+  const [row] = await db.update(analysisDatabaseRowsTable)
+    .set({ notes: body.content, updatedAt: new Date() })
+    .where(and(
+      eq(analysisDatabaseRowsTable.id, rowId),
+      eq(analysisDatabaseRowsTable.databaseId, databaseId),
+    ))
+    .returning();
+  if (!row) {
+    res.status(404).json({ error: "데이터 행을 찾을 수 없습니다." });
+    return;
+  }
+  await recordEvent(req, "update", "analysis_database_row_note", rowId);
+  res.json(row);
+});
+
 router.get("/admin/databases/:id/notes", async (req, res): Promise<void> => {
   const id = int(req.params.id);
   if (!(await canAccessDatabase(req, id))) {
@@ -1334,6 +1435,20 @@ router.post("/admin/databases/:id/assign", requireOwner, async (req, res): Promi
     return;
   }
   await recordEvent(req, "assign", "database", id);
+  res.json(database);
+});
+
+router.post("/admin/databases/:id/unassign", requireOwner, async (req, res): Promise<void> => {
+  const id = int(req.params.id);
+  const [database] = await db.update(analysisDatabasesTable)
+    .set({ assignedStaffId: null, updatedAt: new Date() })
+    .where(eq(analysisDatabasesTable.id, id))
+    .returning();
+  if (!database) {
+    res.status(404).json({ error: "분석 DB를 찾을 수 없습니다." });
+    return;
+  }
+  await recordEvent(req, "unassign", "database", id);
   res.json(database);
 });
 

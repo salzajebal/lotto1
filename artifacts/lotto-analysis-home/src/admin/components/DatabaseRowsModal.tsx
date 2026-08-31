@@ -1,6 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
-import { CheckSquare, ChevronLeft, ChevronRight, Loader2, MessageSquareText, Search, Send, UserPlus } from 'lucide-react';
-import { useAssignDatabaseRows, useCreateDatabaseNote, useDatabaseNotes, useDatabaseRows, useStaff } from '../api';
+import { CheckSquare, ChevronLeft, ChevronRight, Loader2, MessageSquareText, Search, Send, UserMinus, UserPlus } from 'lucide-react';
+import {
+  useAssignDatabaseRows,
+  useCreateDatabaseNote,
+  useDatabaseNotes,
+  useDatabaseRows,
+  useStaff,
+  useUnassignDatabaseRows,
+  useUpdateDatabaseRowNote,
+} from '../api';
 import { Button, Input, Modal, Select, Table, Td, Th, Textarea } from './UI';
 
 export default function DatabaseRowsModal({
@@ -19,11 +27,15 @@ export default function DatabaseRowsModal({
   const { data: notes, isLoading: notesLoading } = useDatabaseNotes(database?.id ?? null);
   const createNote = useCreateDatabaseNote();
   const assignRows = useAssignDatabaseRows();
+  const unassignRows = useUnassignDatabaseRows();
+  const updateRowNote = useUpdateDatabaseRowNote();
   const { data: staffList } = useStaff();
   const [noteContent, setNoteContent] = useState('');
   const [selectedRowIds, setSelectedRowIds] = useState<Set<number>>(new Set());
   const [targetStaffId, setTargetStaffId] = useState(0);
-  const activeStaff = useMemo(() => staffList?.filter((staff: any) => staff.active) || [], [staffList]);
+  const [editingRow, setEditingRow] = useState<any | null>(null);
+  const [rowNoteContent, setRowNoteContent] = useState('');
+  const activeStaff = useMemo(() => staffList?.filter((staff: any) => staff.active && staff.role === 'staff') || [], [staffList]);
 
   useEffect(() => {
     setSearchInput('');
@@ -32,6 +44,8 @@ export default function DatabaseRowsModal({
     setNoteContent('');
     setSelectedRowIds(new Set());
     setTargetStaffId(0);
+    setEditingRow(null);
+    setRowNoteContent('');
   }, [database?.id]);
 
   const handleSearch = (event: React.FormEvent) => {
@@ -86,6 +100,40 @@ export default function DatabaseRowsModal({
     });
   };
 
+  const handleUnassignRows = () => {
+    if (!database || selectedRowIds.size === 0) return;
+    if (!window.confirm(`선택한 ${selectedRowIds.size.toLocaleString()}건의 배정을 취소할까요?`)) return;
+    unassignRows.mutate({
+      databaseId: database.id,
+      rowIds: Array.from(selectedRowIds),
+    }, {
+      onSuccess: () => {
+        setSelectedRowIds(new Set());
+        setTargetStaffId(0);
+      },
+    });
+  };
+
+  const openRowNote = (row: any) => {
+    setEditingRow(row);
+    setRowNoteContent(row.notes || '');
+  };
+
+  const handleSaveRowNote = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!database || !editingRow) return;
+    updateRowNote.mutate({
+      databaseId: database.id,
+      rowId: editingRow.id,
+      content: rowNoteContent,
+    }, {
+      onSuccess: () => {
+        setEditingRow(null);
+        setRowNoteContent('');
+      },
+    });
+  };
+
   return (
     <Modal title={database ? `${database.name} 데이터` : '분석 DB 데이터'} isOpen={Boolean(database)} onClose={onClose} size="xl">
       <div className="space-y-4">
@@ -110,6 +158,35 @@ export default function DatabaseRowsModal({
             </Button>
           </form>
         </div>
+
+        {canAssign && (
+          <form onSubmit={handleAssignRows} className="rounded-lg border border-[var(--ad-gold)] bg-[var(--ad-gold-bg)] p-3">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--ad-muted)]">
+                <CheckSquare size={15} className="text-[var(--ad-gold)]" />
+                <strong className="text-white">{selectedRowIds.size.toLocaleString()}건 선택됨</strong>
+                <span>· 페이지를 이동해도 선택이 유지됩니다.</span>
+                <Button type="button" variant="outline" size="sm" onClick={toggleVisibleRows}>
+                  {allVisibleSelected ? '현재 페이지 선택 해제' : `현재 페이지 ${visibleRowIds.length.toLocaleString()}건 전체 선택`}
+                </Button>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Select value={targetStaffId} onChange={(event) => setTargetStaffId(Number(event.target.value))} className="min-w-40">
+                  <option value={0}>담당 직원 선택</option>
+                  {activeStaff.map((staff: any) => <option key={staff.id} value={staff.id}>{staff.name}</option>)}
+                </Select>
+                <Button type="submit" className="shrink-0 gap-2" disabled={!targetStaffId || selectedRowIds.size === 0 || assignRows.isPending}>
+                  {assignRows.isPending ? <Loader2 size={15} className="animate-spin" /> : <UserPlus size={15} />}
+                  선택한 {selectedRowIds.size.toLocaleString()}건 배정
+                </Button>
+                <Button type="button" variant="danger" className="shrink-0 gap-2" disabled={selectedRowIds.size === 0 || unassignRows.isPending} onClick={handleUnassignRows}>
+                  {unassignRows.isPending ? <Loader2 size={15} className="animate-spin" /> : <UserMinus size={15} />}
+                  선택 행 배정 취소
+                </Button>
+              </div>
+            </div>
+          </form>
+        )}
 
         <section className="rounded-lg border border-[var(--ad-border)] bg-[var(--ad-bg)] p-4">
           <div className="mb-3 flex items-center gap-2">
@@ -157,23 +234,32 @@ export default function DatabaseRowsModal({
           {createNote.isError && <p className="mt-2 text-xs text-[#F85149]">{createNote.error instanceof Error ? createNote.error.message : '메모 저장에 실패했습니다.'}</p>}
         </section>
 
-        {canAssign && (
-          <form onSubmit={handleAssignRows} className="flex flex-col gap-3 rounded-lg border border-[var(--ad-border)] bg-[var(--ad-bg)] p-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-2 text-xs text-[var(--ad-muted)]">
-              <CheckSquare size={15} className="text-[var(--ad-gold)]" />
-              <span>{selectedRowIds.size.toLocaleString()}건 선택됨 · 페이지를 이동해도 선택이 유지됩니다.</span>
+        {editingRow && (
+          <section className="rounded-lg border border-[var(--ad-gold)] bg-[var(--ad-gold-bg)] p-4">
+            <div className="mb-3 flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-semibold text-white">행별 메모 · {editingRow.memberName}</h3>
+                <p className="mt-1 text-xs text-[var(--ad-muted)]">{editingRow.phone} · 해당 데이터 행에만 저장되는 내부 메모입니다.</p>
+              </div>
+              <Button type="button" variant="ghost" size="sm" onClick={() => setEditingRow(null)}>닫기</Button>
             </div>
-            <div className="flex gap-2">
-              <Select value={targetStaffId} onChange={(event) => setTargetStaffId(Number(event.target.value))} className="min-w-40">
-                <option value={0}>담당 직원 선택</option>
-                {activeStaff.map((staff: any) => <option key={staff.id} value={staff.id}>{staff.name}</option>)}
-              </Select>
-              <Button type="submit" className="shrink-0 gap-2" disabled={!targetStaffId || selectedRowIds.size === 0 || assignRows.isPending}>
-                {assignRows.isPending ? <Loader2 size={15} className="animate-spin" /> : <UserPlus size={15} />}
-                선택 행 배정
-              </Button>
-            </div>
-          </form>
+            <form onSubmit={handleSaveRowNote} className="space-y-3">
+              <Textarea
+                value={rowNoteContent}
+                onChange={(event) => setRowNoteContent(event.target.value)}
+                placeholder="이 고객 행의 상담 내용, 성향, 후속 조치 등을 기록하세요."
+                maxLength={3000}
+                className="min-h-[110px]"
+              />
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-[10px] text-[var(--ad-muted)]">{rowNoteContent.length.toLocaleString()} / 3,000자</span>
+                <Button type="submit" size="sm" className="gap-2" disabled={updateRowNote.isPending}>
+                  {updateRowNote.isPending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                  행 메모 저장
+                </Button>
+              </div>
+            </form>
+          </section>
         )}
 
         {isLoading ? (
@@ -188,9 +274,13 @@ export default function DatabaseRowsModal({
               <tr>
                 {canAssign && (
                   <Th>
-                    <button type="button" className="text-[var(--ad-muted)] hover:text-white" onClick={toggleVisibleRows} aria-label="현재 페이지 전체 선택">
-                      <CheckSquare size={16} />
-                    </button>
+                    <input
+                      type="checkbox"
+                      checked={allVisibleSelected}
+                      onChange={toggleVisibleRows}
+                      className="accent-[var(--ad-gold)]"
+                      aria-label="현재 페이지 전체 선택"
+                    />
                   </Th>
                 )}
                 <Th>번호</Th>
@@ -199,6 +289,7 @@ export default function DatabaseRowsModal({
                 <Th>금액</Th>
                 <Th>날짜</Th>
                 <Th>담당자</Th>
+                <Th>행 메모</Th>
               </tr>
             </thead>
             <tbody>
@@ -221,11 +312,23 @@ export default function DatabaseRowsModal({
                   <Td>₩{Number(row.amount).toLocaleString()}</Td>
                   <Td>{row.recordedDate}</Td>
                   <Td>{row.assignedStaffName || <span className="text-[var(--ad-muted)]">미배정</span>}</Td>
+                  <Td>
+                    <Button
+                      type="button"
+                      variant={row.notes ? 'secondary' : 'ghost'}
+                      size="sm"
+                      className="gap-1.5"
+                      onClick={() => openRowNote(row)}
+                    >
+                      <MessageSquareText size={14} />
+                      {row.notes ? '메모 있음' : '메모'}
+                    </Button>
+                  </Td>
                 </tr>
               ))}
               {data?.rows?.length === 0 && (
                 <tr>
-                  <Td colSpan={canAssign ? 7 : 6} className="text-center py-10 text-[var(--ad-muted)]">
+                  <Td colSpan={canAssign ? 8 : 7} className="text-center py-10 text-[var(--ad-muted)]">
                     {search ? '검색 결과가 없습니다.' : '등록된 데이터가 없습니다.'}
                   </Td>
                 </tr>
