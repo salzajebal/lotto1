@@ -82,6 +82,7 @@ export const analysisDatabaseRowsTable = pgTable("analysis_database_rows", {
   memberName: text("member_name").notNull(),
   amount: integer("amount").notNull().default(0),
   recordedDate: date("recorded_date", { mode: "string" }).notNull(),
+  assignedStaffId: integer("assigned_staff_id").references(() => adminUsersTable.id, { onDelete: "set null" }),
   ...timestamps,
 }, (table) => ({
   uniqueRow: uniqueIndex("analysis_database_rows_unique_row_idx")
@@ -90,6 +91,8 @@ export const analysisDatabaseRowsTable = pgTable("analysis_database_rows", {
     .on(table.databaseId, table.recordedDate),
   databasePhone: index("analysis_database_rows_database_phone_idx")
     .on(table.databaseId, table.phone),
+  databaseStaff: index("analysis_database_rows_database_staff_idx")
+    .on(table.databaseId, table.assignedStaffId),
 }));
 
 export const analysisDatabaseNotesTable = pgTable("analysis_database_notes", {

@@ -213,7 +213,7 @@ export default function DatabasesView({ user }: { user: { role: string } }) {
         onClose={() => setImportModalOpen(false)}
         databases={databases || []}
       />
-      <DatabaseRowsModal database={detailDatabase} onClose={() => setDetailDatabase(null)} />
+      <DatabaseRowsModal database={detailDatabase} canAssign={canAssign} onClose={() => setDetailDatabase(null)} />
     </div>
   );
 }

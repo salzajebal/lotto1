@@ -70,8 +70,8 @@ export function PortalHome({
           <p>개인정보가 흐림 처리된 실제 용지 사진입니다.</p>
         </div>
         <div className="portal-ticket-gallery-grid">
-          {ticketProofRecords.map((proof) => (
-            <figure className="portal-ticket-photo" key={proof.image}>
+          {ticketProofRecords.map((proof, index) => (
+            <figure className={`portal-ticket-photo ${index < 3 ? 'portal-ticket-photo-current' : ''}`} key={proof.image}>
               <img src={proof.image} alt={`${proof.draw} 당첨 용지 사진`} />
               <figcaption><b>{proof.draw}</b><span>{proof.issuedAt}</span></figcaption>
             </figure>

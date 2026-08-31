@@ -14,9 +14,9 @@ import winningTicketImageOne from '@assets/image_1788152850744.png';
 import winningTicketImageTwo from '@assets/image_1788152853222.png';
 import winningTicketImageFour from '@assets/image_1788152859622.png';
 import winningTicketImageFive from '@assets/image_1788152866212.png';
-import winningTicketImage1239 from '@assets/image_1788167699776.png';
-import winningTicketImage1237 from '@assets/image_1788167702172.png';
-import winningTicketImage1238 from '@assets/image_1788167705450.png';
+import winningTicketImage1239 from '@assets/image_1788172301924.png';
+import winningTicketImage1238 from '@assets/image_1788172304309.png';
+import winningTicketImage1237 from '@assets/image_1788172299565.png';
 import heroStoryImageOne from '@assets/image_1788153395386.png';
 import heroStoryImageTwo from '@assets/image_1788153408517.png';
 import heroStoryImageThree from '@assets/image_1788153415880.png';
@@ -352,7 +352,7 @@ function Home() {
                {!reviewsLoading && !reviewsError && featuredReviews.length === 0 && (
                  <div className="hero-photo-gallery" aria-label="로또리코 당첨자 인터뷰 및 증빙 사진">
                    {heroStoryImages.map((story, index) => (
-                     <figure className={`hero-photo-card ${index === 0 ? 'hero-photo-card-featured' : ''}`} key={story.image}>
+                      <figure className={`hero-photo-card ${index === 0 ? 'hero-photo-card-featured' : ''} ${index === heroStoryImages.length - 1 ? 'hero-photo-card-ticket' : ''}`} key={story.image}>
                        <img src={story.image} alt={`${story.draw} ${story.title}`} />
                        <figcaption><small>{story.draw}</small><strong>{story.title}</strong></figcaption>
                      </figure>

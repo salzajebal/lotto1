@@ -265,6 +265,24 @@ export function useDatabaseRows(databaseId: number | null, params?: { search?: s
   });
 }
 
+export function useAssignDatabaseRows() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: ({ databaseId, rowIds, staffId }: { databaseId: number; rowIds: number[]; staffId: number }) =>
+      fetcher(`${API_BASE}/databases/${databaseId}/rows/assign`, {
+        method: 'POST',
+        body: JSON.stringify({ rowIds, staffId }),
+      }),
+    onSuccess: (result: { assignedCount: number }, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['adminDatabaseRows', variables.databaseId] });
+      queryClient.invalidateQueries({ queryKey: ['adminDatabases'] });
+      toast({ title: '데이터 행 배정 완료', description: `${result.assignedCount.toLocaleString()}건을 직원에게 배정했습니다.` });
+    },
+    onError: (err: Error) => toast({ title: '데이터 행 배정 실패', description: err.message, variant: 'destructive' }),
+  });
+}
+
 export function useDatabaseNotes(databaseId: number | null) {
   return useQuery({
     queryKey: ['adminDatabaseNotes', databaseId],

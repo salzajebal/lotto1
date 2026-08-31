@@ -5,7 +5,7 @@ import { createHash, randomBytes, scryptSync, timingSafeEqual } from "node:crypt
 import { createRequire } from "node:module";
 import { pathToFileURL } from "node:url";
 import { Worker } from "node:worker_threads";
-import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
+import { and, desc, eq, exists, ilike, inArray, or, sql } from "drizzle-orm";
 import { z } from "zod/v4";
 import {
   adminSessionsTable,
@@ -465,9 +465,20 @@ async function canAccessInquiry(req: Request, inquiryId: number) {
 
 async function canAccessDatabase(req: Request, databaseId: number) {
   if (isOwner(req)) return true;
-  const [database] = await db.select({ id: analysisDatabasesTable.id }).from(analysisDatabasesTable)
-    .where(and(eq(analysisDatabasesTable.id, databaseId), eq(analysisDatabasesTable.assignedStaffId, req.adminUser!.id))).limit(1);
-  return Boolean(database);
+  const [database] = await db.select({ id: analysisDatabasesTable.id, assignedStaffId: analysisDatabasesTable.assignedStaffId })
+    .from(analysisDatabasesTable)
+    .where(eq(analysisDatabasesTable.id, databaseId))
+    .limit(1);
+  if (!database) return false;
+  if (database.assignedStaffId === req.adminUser!.id) return true;
+  const [assignedRow] = await db.select({ id: analysisDatabaseRowsTable.id })
+    .from(analysisDatabaseRowsTable)
+    .where(and(
+      eq(analysisDatabaseRowsTable.databaseId, databaseId),
+      eq(analysisDatabaseRowsTable.assignedStaffId, req.adminUser!.id),
+    ))
+    .limit(1);
+  return Boolean(assignedRow);
 }
 
 router.use(cookieParser());
@@ -1083,7 +1094,17 @@ router.delete("/admin/grades/:id", requireOwner, async (req, res): Promise<void>
 router.get("/admin/databases", async (req, res): Promise<void> => {
   const page = Math.max(1, int(req.query.page, 1));
   const limit = 10;
-  const where = isOwner(req) ? undefined : eq(analysisDatabasesTable.assignedStaffId, req.adminUser!.id);
+  const where = isOwner(req) ? undefined : or(
+    eq(analysisDatabasesTable.assignedStaffId, req.adminUser!.id),
+    exists(
+      db.select({ id: analysisDatabaseRowsTable.id })
+        .from(analysisDatabaseRowsTable)
+        .where(and(
+          eq(analysisDatabaseRowsTable.databaseId, analysisDatabasesTable.id),
+          eq(analysisDatabaseRowsTable.assignedStaffId, req.adminUser!.id),
+        )),
+    ),
+  );
   const [[count], rows] = await Promise.all([
     db.select({ count: sql<number>`count(*)::int` }).from(analysisDatabasesTable).where(where),
     db.select({
@@ -1094,6 +1115,18 @@ router.get("/admin/databases", async (req, res): Promise<void> => {
       from ${analysisDatabaseRowsTable}
       where ${analysisDatabaseRowsTable.databaseId} = ${analysisDatabasesTable.id}
     )`,
+     assignedRowCount: sql<number>`(
+       select count(*)::int
+       from ${analysisDatabaseRowsTable}
+       where ${analysisDatabaseRowsTable.databaseId} = ${analysisDatabasesTable.id}
+         and ${analysisDatabaseRowsTable.assignedStaffId} is not null
+     )`,
+     unassignedRowCount: sql<number>`(
+       select count(*)::int
+       from ${analysisDatabaseRowsTable}
+       where ${analysisDatabaseRowsTable.databaseId} = ${analysisDatabasesTable.id}
+         and ${analysisDatabaseRowsTable.assignedStaffId} is null
+     )`,
     })
       .from(analysisDatabasesTable)
       .leftJoin(adminUsersTable, eq(analysisDatabasesTable.assignedStaffId, adminUsersTable.id))
@@ -1104,7 +1137,13 @@ router.get("/admin/databases", async (req, res): Promise<void> => {
   ]);
   const total = count?.count ?? 0;
   res.json({
-    items: rows.map(({ database, staffName, entryCount }) => ({ ...database, staffName, entryCount })),
+    items: rows.map(({ database, staffName, entryCount, assignedRowCount, unassignedRowCount }) => ({
+      ...database,
+      staffName,
+      entryCount,
+      assignedRowCount,
+      unassignedRowCount,
+    })),
     pagination: { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) },
   });
 });
@@ -1148,6 +1187,15 @@ router.get("/admin/databases/:id/rows", async (req, res): Promise<void> => {
   const limit = Math.min(100, Math.max(1, int(req.query.limit, 50)));
   const search = text(req.query.search);
   const filters = [eq(analysisDatabaseRowsTable.databaseId, databaseId)];
+  if (!isOwner(req)) {
+    const [database] = await db.select({ assignedStaffId: analysisDatabasesTable.assignedStaffId })
+      .from(analysisDatabasesTable)
+      .where(eq(analysisDatabasesTable.id, databaseId))
+      .limit(1);
+    if (database?.assignedStaffId !== req.adminUser!.id) {
+      filters.push(eq(analysisDatabaseRowsTable.assignedStaffId, req.adminUser!.id));
+    }
+  }
   if (search) {
     filters.push(or(
       ilike(analysisDatabaseRowsTable.phone, `%${search}%`),
@@ -1156,17 +1204,27 @@ router.get("/admin/databases/:id/rows", async (req, res): Promise<void> => {
     )!);
   }
   const where = and(...filters);
-  const [[count], rows] = await Promise.all([
+  const [[count], rows, [assignmentSummary]] = await Promise.all([
     db.select({ count: sql<number>`count(*)::int` }).from(analysisDatabaseRowsTable).where(where),
-    db.select().from(analysisDatabaseRowsTable)
+    db.select({ row: analysisDatabaseRowsTable, assignedStaffName: adminUsersTable.name })
+      .from(analysisDatabaseRowsTable)
+      .leftJoin(adminUsersTable, eq(analysisDatabaseRowsTable.assignedStaffId, adminUsersTable.id))
       .where(where)
       .orderBy(desc(analysisDatabaseRowsTable.recordedDate), desc(analysisDatabaseRowsTable.id))
       .limit(limit)
       .offset((page - 1) * limit),
+    db.select({
+      assigned: sql<number>`count(*) filter (where ${analysisDatabaseRowsTable.assignedStaffId} is not null)::int`,
+      unassigned: sql<number>`count(*) filter (where ${analysisDatabaseRowsTable.assignedStaffId} is null)::int`,
+    }).from(analysisDatabaseRowsTable).where(and(...filters)),
   ]);
   const total = count?.count ?? 0;
   res.json({
-    rows,
+    rows: rows.map(({ row, assignedStaffName }) => ({ ...row, assignedStaffName })),
+    assignmentSummary: {
+      assigned: assignmentSummary?.assigned ?? 0,
+      unassigned: assignmentSummary?.unassigned ?? 0,
+    },
     pagination: {
       page,
       limit,
@@ -1174,6 +1232,55 @@ router.get("/admin/databases/:id/rows", async (req, res): Promise<void> => {
       totalPages: Math.max(1, Math.ceil(total / limit)),
     },
   });
+});
+
+router.post("/admin/databases/:id/rows/assign", requireOwner, async (req, res): Promise<void> => {
+  const databaseId = int(req.params.id);
+  const body = parse(z.object({
+    rowIds: z.array(z.number().int().positive()).min(1).max(5000),
+    staffId: z.number().int().positive(),
+  }), req.body, res);
+  if (!body) return;
+  if (new Set(body.rowIds).size !== body.rowIds.length) {
+    res.status(400).json({ error: "중복된 데이터 행이 포함되어 있습니다." });
+    return;
+  }
+  if (!(await activeStaffExists(body.staffId))) {
+    res.status(400).json({ error: "활성 상태인 담당 직원을 선택해주세요." });
+    return;
+  }
+  const assignedCount = await db.transaction(async (tx) => {
+    const [database] = await tx.select({ id: analysisDatabasesTable.id })
+      .from(analysisDatabasesTable)
+      .where(eq(analysisDatabasesTable.id, databaseId))
+      .limit(1);
+    if (!database) return null;
+    const [rowCount] = await tx.select({ count: sql<number>`count(*)::int` })
+      .from(analysisDatabaseRowsTable)
+      .where(and(
+        eq(analysisDatabaseRowsTable.databaseId, databaseId),
+        inArray(analysisDatabaseRowsTable.id, body.rowIds),
+      ));
+    if ((rowCount?.count ?? 0) !== body.rowIds.length) return -1;
+    const updated = await tx.update(analysisDatabaseRowsTable)
+      .set({ assignedStaffId: body.staffId, updatedAt: new Date() })
+      .where(and(
+        eq(analysisDatabaseRowsTable.databaseId, databaseId),
+        inArray(analysisDatabaseRowsTable.id, body.rowIds),
+      ))
+      .returning({ id: analysisDatabaseRowsTable.id });
+    return updated.length;
+  });
+  if (assignedCount == null) {
+    res.status(404).json({ error: "분석 DB를 찾을 수 없습니다." });
+    return;
+  }
+  if (assignedCount < 0) {
+    res.status(400).json({ error: "선택한 데이터 행을 확인해주세요." });
+    return;
+  }
+  await recordEvent(req, "assign", "analysis_database_rows", databaseId, `${assignedCount}건 일괄 배정`);
+  res.json({ ok: true, assignedCount });
 });
 
 router.get("/admin/databases/:id/notes", async (req, res): Promise<void> => {
