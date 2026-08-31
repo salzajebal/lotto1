@@ -2073,6 +2073,136 @@ a { color: inherit; text-decoration: none; }
   object-position: center;
 }
 
+.portal-photo-archive {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid #294865;
+  background: #0b2340;
+}
+
+.portal-photo-archive-head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 2px 2px 6px;
+}
+
+.portal-photo-archive-head small {
+  color: var(--portal-gold);
+  font: 9px var(--app-font-mono);
+  letter-spacing: .12em;
+}
+
+.portal-photo-archive-head strong {
+  color: #fff;
+  font-size: 15px;
+}
+
+.portal-photo-archive-head span {
+  color: #91a9bc;
+  font-size: 10px;
+}
+
+.portal-photo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.portal-photo-card {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  margin: 0;
+  border: 1px solid #365a78;
+  background: #071a30;
+}
+
+.portal-photo-card img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+}
+
+.portal-photo-card figcaption {
+  display: flex;
+  min-height: 58px;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px;
+  background: #102f50;
+}
+
+.portal-photo-card figcaption small {
+  color: var(--portal-gold);
+  font: 9px var(--app-font-mono);
+}
+
+.portal-photo-card figcaption b {
+  overflow: hidden;
+  color: #eef4f7;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.portal-photo-card figcaption i {
+  overflow: hidden;
+  color: #91a9bc;
+  font-size: 9px;
+  font-style: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.portal-photo-receipt {
+  padding: 14px;
+}
+
+.portal-proof-photo {
+  overflow: hidden;
+  margin-top: 14px;
+  border: 1px solid #d3d7d0;
+  background: #e9e9e1;
+}
+
+.portal-proof-photo img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1.35 / 1;
+  object-fit: cover;
+}
+
+.portal-photo-receipt .portal-receipt-main {
+  padding: 14px 0 10px;
+}
+
+.portal-photo-receipt .portal-receipt-main > span {
+  font-size: 17px;
+}
+
+.portal-photo-receipt .portal-receipt-main strong {
+  color: #4b5c65;
+  font-size: 13px;
+}
+
+.portal-photo-receipt .portal-receipt-main b {
+  color: #9a7b35;
+  font-size: 12px;
+}
+
+.portal-table-photo-row {
+  cursor: default;
+}
+
+.portal-table-photo-row:hover {
+  background: #f5f8f8;
+}
+
 @media (max-width: 560px) {
   .portal-story-thumb {
     flex-basis: 94px;
@@ -2082,5 +2212,13 @@ a { color: inherit; text-decoration: none; }
 
   .portal-feature-story {
     min-height: 245px;
+  }
+
+  .portal-photo-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .portal-photo-card figcaption {
+    padding: 6px;
   }
 }
