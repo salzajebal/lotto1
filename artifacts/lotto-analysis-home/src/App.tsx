@@ -18,6 +18,7 @@ import winningTicketImageFive from '@assets/image_1788152866212.png';
 import heroStoryImageOne from '@assets/image_1788153395386.png';
 import heroStoryImageTwo from '@assets/image_1788153408517.png';
 import heroStoryImageThree from '@assets/image_1788153415880.png';
+import heroStoryImageFeatured from '@assets/image_1788154593822.png';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -41,6 +42,7 @@ const winningTicketImages = [
   winningTicketImageFive,
 ];
 const heroStoryImages = [
+  { image: heroStoryImageFeatured, draw: '1044회', title: '당첨 용지 증빙' },
   { image: heroStoryImageOne, draw: '800회', title: '1등 당첨자 인터뷰' },
   { image: heroStoryImageTwo, draw: '841회', title: '당첨 용지 증빙' },
   { image: heroStoryImageThree, draw: '912회', title: '1등 당첨자 인터뷰' },
