@@ -318,7 +318,9 @@ function Home() {
           </nav>
           <div className="top-actions">
             <button className="login-button" onClick={() => openModal('auth')}>로그인 / 회원가입</button>
-            <button className="mobile-menu" aria-label="메뉴 열기" onClick={() => setMenuOpen((current) => !current)}><Menu size={21} /></button>
+            <button className="mobile-menu" aria-label={menuOpen ? '메뉴 닫기' : '메뉴 열기'} aria-expanded={menuOpen} onClick={() => setMenuOpen((current) => !current)}>
+              {menuOpen ? <X size={21} /> : <Menu size={21} />}
+            </button>
           </div>
         </div>
       </header>
@@ -422,7 +424,9 @@ function PublicPageHeader() {
         </nav>
         <div className="top-actions">
           <Link className="login-button standalone-login" href="/#top">홈으로</Link>
-          <button className="mobile-menu" aria-label="메뉴 열기" onClick={() => setMenuOpen((current) => !current)}><Menu size={21} /></button>
+          <button className="mobile-menu" aria-label={menuOpen ? '메뉴 닫기' : '메뉴 열기'} aria-expanded={menuOpen} onClick={() => setMenuOpen((current) => !current)}>
+            {menuOpen ? <X size={21} /> : <Menu size={21} />}
+          </button>
         </div>
       </div>
     </header>
