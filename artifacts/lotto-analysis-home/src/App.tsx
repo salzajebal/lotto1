@@ -15,6 +15,9 @@ import winningTicketImageTwo from '@assets/image_1788152853222.png';
 import winningTicketImageThree from '@assets/image_1788152855899.png';
 import winningTicketImageFour from '@assets/image_1788152859622.png';
 import winningTicketImageFive from '@assets/image_1788152866212.png';
+import heroStoryImageOne from '@assets/image_1788153395386.png';
+import heroStoryImageTwo from '@assets/image_1788153408517.png';
+import heroStoryImageThree from '@assets/image_1788153415880.png';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -36,6 +39,11 @@ const winningTicketImages = [
   winningTicketImageThree,
   winningTicketImageFour,
   winningTicketImageFive,
+];
+const heroStoryImages = [
+  { image: heroStoryImageOne, draw: '800회', title: '1등 당첨자 인터뷰' },
+  { image: heroStoryImageTwo, draw: '841회', title: '당첨 용지 증빙' },
+  { image: heroStoryImageThree, draw: '912회', title: '1등 당첨자 인터뷰' },
 ];
 
 type ModalName = 'review' | 'support' | 'auth' | 'membership' | 'video' | null;
@@ -335,12 +343,13 @@ function Home() {
               {reviewsLoading && <div className="public-empty winner-empty">공개 후기를 불러오는 중입니다.</div>}
               {reviewsError && <div className="public-empty public-error winner-empty">공개 후기를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.</div>}
                {!reviewsLoading && !reviewsError && featuredReviews.length === 0 && (
-                 <div className="winner-card winner-card-receipt winner-card-photo-only">
-                   <span className="receipt-paper receipt-photo-paper">
-                     <img src={winningTicketImages[0]} alt="로또 당첨 용지 증빙 사진" />
-                   </span>
-                   <span className="winner-quote">실제 당첨 용지로 확인하는 로또리코의 당첨 기록</span>
-                   <span className="winner-link">당첨 용지 증빙 사진</span>
+                 <div className="hero-photo-gallery" aria-label="로또리코 당첨자 인터뷰 및 증빙 사진">
+                   {heroStoryImages.map((story, index) => (
+                     <figure className={`hero-photo-card ${index === 0 ? 'hero-photo-card-featured' : ''}`} key={story.image}>
+                       <img src={story.image} alt={`${story.draw} ${story.title}`} />
+                       <figcaption><small>{story.draw}</small><strong>{story.title}</strong></figcaption>
+                     </figure>
+                   ))}
                  </div>
                )}
             </div>

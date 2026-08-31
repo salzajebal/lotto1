@@ -1,9 +1,19 @@
 import type { ReactNode } from 'react';
 import { ArrowRight, BarChart3, Check, ChevronRight, FileCheck2, MessageCircle, Play, ShieldCheck, Trophy, Users } from 'lucide-react';
 import { Link } from 'wouter';
+import interviewImageOne from '@assets/image_1788153329574.png';
+import interviewImageTwo from '@assets/image_1788153332657.png';
+import interviewImageThree from '@assets/image_1788153336388.png';
+import interviewImageFour from '@assets/image_1788153339617.png';
 
 type Review = { id: number; memberName: string; drawNumber: number; rank: string; amount: number; content: string; createdAt: string };
 type Post = { id: number; authorName: string; category: string; title: string; content: string; replyCount: number; createdAt: string };
+const interviewStories = [
+  { image: interviewImageOne, draw: '912회', amount: '1,493,500,581원', label: '1등 당첨자 인터뷰' },
+  { image: interviewImageTwo, draw: '860회', amount: '1,879,899,825원', label: '당첨자 인터뷰 기록' },
+  { image: interviewImageThree, draw: '757회', amount: '739,839,858원', label: '1등 당첨자 인터뷰' },
+  { image: interviewImageFour, draw: '800회', amount: '1,632,246,205원', label: '당첨자 인터뷰 기록' },
+];
 
 const amount = (value: number) => value > 0 ? `${value.toLocaleString('ko-KR')}원` : '금액 비공개';
 const date = (value: string) => new Intl.DateTimeFormat('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(value));
@@ -55,7 +65,31 @@ export function PortalHome({
         {!reviewsLoading && !reviewsError && !recentReviews.length && <div className="portal-table-empty">공개된 전체 당첨 내역이 없습니다.</div>}
       </div>
     </section>
-    <section className="portal-stories" id="video"><div className="shell"><div className="portal-section-head portal-dark-head"><div><p className="portal-eyebrow gold">02 / MEMBER STORIES</p><h2>숫자 뒤에 있는<br /><em>사람의 이야기</em></h2><p>당첨 회원의 인터뷰와 후기를 함께 공개합니다.</p></div><button data-testid="button-all-interviews" className="portal-text-link light" onClick={() => onModal('video')}>인터뷰 전체보기 <ChevronRight size={15} /></button></div><div className="portal-story-grid"><button data-testid="button-feature-interview" className="portal-feature-story" onClick={() => onModal('video')}><span className="portal-play"><Play size={18} fill="currentColor" /></span><div><small>검증된 당첨 회원 인터뷰</small><h3>“확인된 기록과 경험을<br />영상으로 전해드립니다.”</h3></div></button><div className="portal-mini-stories">{recentReviews.slice(0, 2).map(review => <button key={review.id} data-testid={`button-interview-${review.id}`} onClick={() => onModal('video')}><Play size={14} fill="currentColor" /><span><small>{review.drawNumber}회 · MEMBER INTERVIEW</small><b>{review.content}</b><i>{review.memberName} 님</i></span><ChevronRight size={16} /></button>)}{!recentReviews.length && <div className="portal-empty-dark">공개할 당첨자 인터뷰를 준비하고 있습니다.</div>}</div></div></div></section>
+    <section className="portal-stories" id="video">
+      <div className="shell">
+        <div className="portal-section-head portal-dark-head">
+          <div><p className="portal-eyebrow gold">02 / MEMBER STORIES</p><h2>숫자 뒤에 있는<br /><em>사람의 이야기</em></h2><p>당첨 회원의 인터뷰와 후기를 함께 공개합니다.</p></div>
+          <button data-testid="button-all-interviews" className="portal-text-link light" onClick={() => onModal('video')}>인터뷰 전체보기 <ChevronRight size={15} /></button>
+        </div>
+        <div className="portal-story-grid">
+          <button data-testid="button-feature-interview" className="portal-feature-story" onClick={() => onModal('video')}>
+            <img className="portal-story-image" src={interviewStories[0].image} alt={`${interviewStories[0].draw} 당첨자 인터뷰`} />
+            <span className="portal-story-image-shade" />
+            <span className="portal-play"><Play size={18} fill="currentColor" /></span>
+            <div className="portal-story-copy"><small>검증된 당첨 회원 인터뷰 · {interviewStories[0].draw}</small><h3>“당첨의 순간과<br />그 후의 이야기를 전합니다.”</h3><p>{interviewStories[0].amount}</p></div>
+          </button>
+          <div className="portal-mini-stories">
+            {interviewStories.slice(1).map((story, index) => (
+              <button key={story.image} data-testid={`button-interview-photo-${index + 2}`} onClick={() => onModal('video')}>
+                <img className="portal-story-thumb" src={story.image} alt={`${story.draw} 당첨자 인터뷰`} />
+                <span><small>{story.draw} · MEMBER INTERVIEW</small><b>{story.label}</b><i>{story.amount}</i></span>
+                <ChevronRight size={16} />
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
     <section className="shell portal-section portal-lower" id="method"><div className="portal-method"><p className="portal-eyebrow">03 / OUR METHOD</p><h2>분석 기준을<br /><em>숨기지 않습니다.</em></h2><p>매주 같은 순서로 데이터를 읽고, 결과를 다시 기록합니다.</p>{[{ Icon: BarChart3, title: '출현 빈도와 간격', desc: '최근 회차의 출현 횟수와 재등장 주기를 비교합니다.' }, { Icon: ShieldCheck, title: '조합 밸런스', desc: '홀짝·저고·끝수·연속수·총합을 점검합니다.' }, { Icon: Check, title: '결과 복기와 보정', desc: '실제 결과를 다음 주 필터에 반영합니다.' }].map(({ Icon, title, desc }, index) => <div className="portal-method-row" key={title}><b>0{index + 1}</b><Icon size={18} /><span><strong>{title}</strong><small>{desc}</small></span></div>)}</div>
       <aside className="portal-community" id="community"><div className="portal-side-head"><span className="portal-eyebrow">COMMUNITY LOUNGE</span><Link data-testid="link-all-community" className="portal-text-link" href="/community">전체보기 <ChevronRight size={13} /></Link></div><h3>이번 주 회원 기록</h3>{recentPosts.map(post => <Link className="portal-post" key={post.id} href="/community" data-testid={`link-community-post-${post.id}`}><span>{post.authorName.slice(0, 1)}</span><span><b>{post.authorName} · {post.category}</b><small>“{post.title} — {post.content}”</small></span><ChevronRight size={14} /></Link>)}{postsLoading && <div className="public-empty">커뮤니티를 불러오는 중입니다.</div>}{postsError && <div className="public-empty public-error">커뮤니티를 불러오지 못했습니다.</div>}{!postsLoading && !postsError && !recentPosts.length && <div className="public-empty">공개된 회원 기록이 아직 없습니다.</div>}<Link data-testid="link-community-entry" className="portal-community-cta" href="/community"><Users size={15} /> 커뮤니티 입장하기</Link></aside></section>
      <section className="shell portal-membership" id="membership"><div className="portal-membership-intro"><p className="portal-eyebrow gold">LOTTORICO MEMBERSHIP</p><h2>이번 주 분석 기준을<br /><em>회원 전용으로 받아보세요.</em></h2><p>주간 분석 번호 · 리포트 · 결과 복기 · 회원 커뮤니티</p></div><div className="portal-membership-offers"><article className="portal-offer portal-offer-vip"><small>1·2등 분석 번호</small><strong>VIP 상담</strong><p>회원님의 목표에 맞춘<br />맞춤 상담으로 안내합니다.</p><button data-testid="button-vip-consult" onClick={() => onMembership('vip')}>VIP 상담 <ArrowRight size={15} /></button></article><article className="portal-offer portal-offer-premium"><small>3등 멤버십 / 1년</small><strong>330,000<em>원</em></strong><button data-testid="button-membership-consult" onClick={() => onMembership('premium')}>가입 상담 <ArrowRight size={15} /></button></article></div></section>

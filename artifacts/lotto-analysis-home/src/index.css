@@ -697,6 +697,51 @@ a { color: inherit; text-decoration: none; }
 .receipt-photo-paper { overflow:hidden; justify-content:stretch; background:#f4f1e9; }
 .receipt-photo-paper img { display:block; width:100%; height:176px; object-fit:cover; object-position:center; }
 .winner-card-photo-only { grid-column:2; cursor:default; }
+.hero-photo-gallery {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1.35fr 1fr 1fr;
+  gap: 14px;
+  width: 100%;
+}
+.hero-photo-card {
+  position: relative;
+  min-height: 245px;
+  overflow: hidden;
+  margin: 0;
+  border: 1px solid rgb(255 255 255 / .72);
+  border-radius: 14px;
+  background: #071221;
+  box-shadow: 0 16px 38px rgb(0 0 0 / .4);
+}
+.hero-photo-card img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 245px;
+  object-fit: cover;
+  object-position: center;
+}
+.hero-photo-card figcaption {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 48px 18px 16px;
+  background: linear-gradient(transparent, rgb(3 8 20 / .94));
+  color: #fff;
+}
+.hero-photo-card figcaption small {
+  color: #f0c94d;
+  font: 700 10px var(--app-font-mono);
+  letter-spacing: .12em;
+}
+.hero-photo-card figcaption strong {
+  font-size: 16px;
+}
 
 .winner-quote {
   position: relative;
@@ -790,6 +835,8 @@ a { color: inherit; text-decoration: none; }
   .winner-showcase { grid-template-columns: 1fr; }
   .winner-card-photo-only { grid-column:auto; }
   .winner-card { min-height: 305px; }
+  .hero-photo-gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hero-photo-card-featured { grid-column: 1 / -1; }
   .hero-quick-grid { grid-template-columns: 1fr 1fr; }
 }
 
@@ -803,6 +850,10 @@ a { color: inherit; text-decoration: none; }
   .lotto-photo-heading p { font-size: 13px; }
   .winner-showcase { margin-top: 24px; }
   .winner-card { min-height: 285px; }
+  .hero-photo-gallery { grid-template-columns: 1fr; }
+  .hero-photo-card-featured { grid-column: auto; }
+  .hero-photo-card,
+  .hero-photo-card img { min-height: 220px; }
   .hero-quick-grid { grid-template-columns: 1fr; }
   .hero-quick-card { min-height: 132px; }
 }
@@ -1973,5 +2024,63 @@ a { color: inherit; text-decoration: none; }
   .portal-offer + .portal-offer {
     border-top: 1px solid #456985;
     border-left: 0;
+  }
+}
+
+.portal-story-image,
+.portal-story-image-shade {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.portal-story-image {
+  object-fit: cover;
+  object-position: center;
+}
+
+.portal-story-image-shade {
+  background: linear-gradient(180deg, rgb(4 16 31 / .08) 18%, rgb(4 16 31 / .9) 100%);
+}
+
+.portal-story-copy {
+  position: relative;
+  z-index: 1;
+}
+
+.portal-story-copy p {
+  position: relative;
+  margin: 8px 0 0;
+  color: #f0cd6c;
+  font: 700 13px var(--app-font-mono);
+}
+
+.portal-mini-stories button {
+  padding: 12px;
+}
+
+.portal-mini-stories button > svg {
+  flex: 0 0 auto;
+  color: var(--portal-gold);
+}
+
+.portal-story-thumb {
+  flex: 0 0 112px;
+  width: 112px;
+  height: 78px;
+  object-fit: cover;
+  object-position: center;
+}
+
+@media (max-width: 560px) {
+  .portal-story-thumb {
+    flex-basis: 94px;
+    width: 94px;
+    height: 72px;
+  }
+
+  .portal-feature-story {
+    min-height: 245px;
   }
 }
