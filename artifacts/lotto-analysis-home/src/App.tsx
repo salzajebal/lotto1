@@ -10,6 +10,11 @@ import {
   X,
 } from 'lucide-react';
 import lottoBallsBackground from '@assets/ChatGPT_Image_2026년_8월_29일_오전_03_28_36_1787999327234.png';
+import winningTicketImageOne from '@assets/image_1788152850744.png';
+import winningTicketImageTwo from '@assets/image_1788152853222.png';
+import winningTicketImageThree from '@assets/image_1788152855899.png';
+import winningTicketImageFour from '@assets/image_1788152859622.png';
+import winningTicketImageFive from '@assets/image_1788152866212.png';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -24,6 +29,13 @@ const customerTrustBadges = [
   { src: `${import.meta.env.BASE_URL}customer-satisfaction-no-bg.png`, alt: '한국고객만족도 1위', label: '한국고객만족도 1위' },
   { src: `${import.meta.env.BASE_URL}consumer-surprise-index-no-bg.png`, alt: '한국소비자감동지수 1위', label: '한국소비자감동지수 1위' },
   { src: `${import.meta.env.BASE_URL}trust-brand-awards-no-bg.png`, alt: '고객이신뢰하는브랜드대상', label: '고객이신뢰하는브랜드대상' },
+];
+const winningTicketImages = [
+  winningTicketImageOne,
+  winningTicketImageTwo,
+  winningTicketImageThree,
+  winningTicketImageFour,
+  winningTicketImageFive,
 ];
 
 type ModalName = 'review' | 'support' | 'auth' | 'membership' | 'video' | null;
@@ -309,11 +321,8 @@ function Home() {
               {featuredReviews.map((review, index) => (
                 <button className={`winner-card ${index === 1 ? 'winner-card-receipt' : 'winner-card-person'}`} key={review.id} onClick={() => openModal('review')}>
                   {index === 1 ? (
-                    <span className="receipt-paper">
-                      <small>LOTTO 6/45</small>
-                      <b>{review.rank} 당첨</b>
-                      <strong>{review.amount > 0 ? `${review.amount.toLocaleString('ko-KR')}원` : '금액 비공개'}</strong>
-                      <i>{review.drawNumber}회</i>
+                     <span className="receipt-paper receipt-photo-paper">
+                       <img src={winningTicketImages[0]} alt="로또 당첨 용지 증빙 사진" />
                     </span>
                   ) : (
                     <span className={`person-portrait ${index === 2 ? 'portrait-two' : 'portrait-one'}`} aria-hidden="true"><i /><b /></span>
@@ -325,7 +334,15 @@ function Home() {
               ))}
               {reviewsLoading && <div className="public-empty winner-empty">공개 후기를 불러오는 중입니다.</div>}
               {reviewsError && <div className="public-empty public-error winner-empty">공개 후기를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.</div>}
-              {!reviewsLoading && !reviewsError && featuredReviews.length === 0 && <div className="public-empty winner-empty">관리자 검토를 통과한 실제 당첨 후기가 등록되면 이곳에 표시됩니다.</div>}
+               {!reviewsLoading && !reviewsError && featuredReviews.length === 0 && (
+                 <div className="winner-card winner-card-receipt winner-card-photo-only">
+                   <span className="receipt-paper receipt-photo-paper">
+                     <img src={winningTicketImages[0]} alt="로또 당첨 용지 증빙 사진" />
+                   </span>
+                   <span className="winner-quote">실제 당첨 용지로 확인하는 로또리코의 당첨 기록</span>
+                   <span className="winner-link">당첨 용지 증빙 사진</span>
+                 </div>
+               )}
             </div>
 
             <div className="hero-quick-grid">
@@ -358,6 +375,7 @@ function Home() {
           onMembership={openMembershipModal}
           renderKakao={(className) => <KakaoChannelAction className={className}><KakaoButtonLabel /></KakaoChannelAction>}
           trustBadges={customerTrustBadges}
+           winningTicketImages={winningTicketImages}
         />
       </main>
 

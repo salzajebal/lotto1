@@ -10,7 +10,7 @@ const date = (value: string) => new Intl.DateTimeFormat('ko-KR', { year: 'numeri
 const BallRow = ({ draw }: { draw: number }) => <div className="portal-balls" aria-label={`${draw}회 분석 기록`}><span>{String(draw).slice(-2).padStart(2, '0')}</span><span>08</span><span>14</span><span>23</span><span>33</span><span>45</span></div>;
 
 export function PortalHome({
-  reviews, posts, reviewsLoading, reviewsError, postsLoading, postsError, onModal, onMembership, renderKakao, trustBadges,
+  reviews, posts, reviewsLoading, reviewsError, postsLoading, postsError, onModal, onMembership, renderKakao, trustBadges, winningTicketImages,
 }: {
   reviews: Review[];
   posts: Post[];
@@ -22,6 +22,7 @@ export function PortalHome({
   onMembership: (plan: 'vip' | 'premium') => void;
   renderKakao: (className: string) => ReactNode;
   trustBadges: { src: string; alt: string; label: string }[];
+  winningTicketImages: string[];
 }) {
   const recentReviews = reviews.slice(0, 3);
   const recentPosts = posts.slice(0, 3);
@@ -34,6 +35,20 @@ export function PortalHome({
         {reviewsLoading && <div className="public-empty">최신 당첨 증빙을 불러오는 중입니다.</div>}
         {reviewsError && <div className="public-empty public-error">당첨 증빙을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.</div>}
         {!reviewsLoading && !reviewsError && !recentReviews.length && <div className="public-empty">검토 완료된 최신 당첨 증빙이 등록되면 이곳에 표시됩니다.</div>}
+      </div>
+      <div className="portal-ticket-gallery" aria-label="로또 당첨 용지 사진">
+        <div className="portal-ticket-gallery-head">
+          <div><p className="portal-eyebrow">TICKET PHOTO ARCHIVE</p><h3>사진으로 확인하는 당첨 용지</h3></div>
+          <p>개인정보가 흐림 처리된 실제 용지 사진입니다.</p>
+        </div>
+        <div className="portal-ticket-gallery-grid">
+          {winningTicketImages.map((image, index) => (
+            <figure className="portal-ticket-photo" key={image}>
+              <img src={image} alt={`로또 당첨 용지 사진 ${index + 1}`} />
+              <figcaption>당첨 용지 {String(index + 1).padStart(2, '0')}</figcaption>
+            </figure>
+          ))}
+        </div>
       </div>
       <div className="portal-table"><div className="portal-table-title"><div><p className="portal-eyebrow">ALL RECORDS</p><h3>전체 당첨 내역</h3></div><Link data-testid="link-winning-records" className="portal-text-link" href="/reviews">당첨 상세 보기 <ChevronRight size={15} /></Link></div><div className="portal-table-head"><span>회차 / 일자</span><span>당첨 등수</span><span>당첨 금액</span><span>회원</span><span /></div>
         {recentReviews.map(review => <Link className="portal-table-row" key={review.id} href="/reviews" data-testid={`link-winning-detail-${review.id}`}><span><b>{review.drawNumber}회</b><small>{date(review.createdAt)}</small></span><strong className={review.rank === '1등' ? 'first' : ''}>{review.rank}</strong><b>{amount(review.amount)}</b><span>{review.memberName} 회원</span><ChevronRight size={15} /></Link>)}
