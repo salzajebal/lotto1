@@ -1114,17 +1114,9 @@ router.delete("/admin/grades/:id", requireOwner, async (req, res): Promise<void>
 router.get("/admin/databases", async (req, res): Promise<void> => {
   const page = Math.max(1, int(req.query.page, 1));
   const limit = 10;
-  const where = isOwner(req) ? undefined : or(
-    eq(analysisDatabasesTable.assignedStaffId, req.adminUser!.id),
-    exists(
-      db.select({ id: analysisDatabaseRowsTable.id })
-        .from(analysisDatabaseRowsTable)
-        .where(and(
-          eq(analysisDatabaseRowsTable.databaseId, analysisDatabasesTable.id),
-          eq(analysisDatabaseRowsTable.assignedStaffId, req.adminUser!.id),
-        )),
-    ),
-  );
+  const where = isOwner(req)
+    ? undefined
+    : eq(analysisDatabasesTable.assignedStaffId, req.adminUser!.id);
   const [[count], rows] = await Promise.all([
     db.select({ count: sql<number>`count(*)::int` }).from(analysisDatabasesTable).where(where),
     db.select({
