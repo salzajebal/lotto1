@@ -408,6 +408,21 @@ export function useCommunityPosts(page = 1) {
   });
 }
 
+export function useSeedCommunityPosts() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: () => fetcher(`${API_BASE}/community-posts/seed`, { method: 'POST' }),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['adminCommunityPosts'] });
+      queryClient.invalidateQueries({ queryKey: ['publishedCommunityPosts'] });
+      queryClient.invalidateQueries({ queryKey: ['adminDashboard'] });
+      toast({ title: result.created > 0 ? '초기 게시글 등록 완료' : '등록할 게시글이 없습니다.', description: result.message });
+    },
+    onError: (err: Error) => toast({ title: '초기 게시글 등록 실패', description: err.message, variant: 'destructive' }),
+  });
+}
+
 export function useCreateCommunityPost() {
   const queryClient = useQueryClient();
   return useMutation({

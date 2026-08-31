@@ -22,6 +22,7 @@ import {
   supportInquiriesTable,
   winningReviewsTable,
 } from "@workspace/db";
+import { seedCommunityPosts } from "../lib/communitySeed";
 
 type SessionUser = {
   id: number;
@@ -1382,6 +1383,16 @@ router.get("/admin/community-posts", requireOwner, async (req, res): Promise<voi
     items: posts,
     pagination: { page, limit, total, totalPages: Math.max(1, Math.ceil(total / limit)) },
   });
+});
+
+router.post("/admin/community-posts/seed", requireOwner, async (req, res): Promise<void> => {
+  const result = await seedCommunityPosts();
+  if (result.created === 0) {
+    res.json({ created: 0, total: result.total, message: "기존 커뮤니티 게시글이 있어 추가하지 않았습니다." });
+    return;
+  }
+  await recordEvent(req, "create", "community_posts_seed", undefined, `${result.created}개 초기 게시글 일괄 등록`);
+  res.status(201).json({ created: result.created, total: result.total, message: `${result.created}개의 게시글을 등록했습니다.` });
 });
 
 router.post("/admin/community-posts", requireOwner, async (req, res): Promise<void> => {

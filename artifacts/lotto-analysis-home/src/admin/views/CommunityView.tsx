@@ -4,6 +4,7 @@ import {
   useCreateCommunityPost,
   useUpdateCommunityPost,
   useDeleteCommunityPost,
+  useSeedCommunityPosts,
 } from '../api';
 import { Table, Th, Td, Badge, Button, Input, Select, Modal, Label, Textarea } from '../components/UI';
 import { Edit2, Loader2, Plus, Trash2 } from 'lucide-react';
@@ -25,6 +26,7 @@ export default function CommunityView() {
   const createPost = useCreateCommunityPost();
   const updatePost = useUpdateCommunityPost();
   const deletePost = useDeleteCommunityPost();
+  const seedPosts = useSeedCommunityPosts();
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState(emptyForm);
@@ -62,6 +64,11 @@ export default function CommunityView() {
     deletePost.mutate(post.id);
   };
 
+  const handleSeed = () => {
+    if (!window.confirm('2023년 1월부터 2026년 8월까지의 초기 게시글 110개를 등록하시겠습니까? 기존 게시글이 하나라도 있으면 추가하지 않습니다.')) return;
+    seedPosts.mutate();
+  };
+
   const statusBadge = (status: string) => {
     if (status === 'published') return <Badge variant="success">게시됨</Badge>;
     if (status === 'rejected') return <Badge variant="danger">숨김</Badge>;
@@ -75,7 +82,12 @@ export default function CommunityView() {
           <h1 className="text-2xl font-bold text-white mb-1">커뮤니티 관리</h1>
           <p className="text-[var(--ad-muted)] text-sm">고객이 제출한 게시글을 검토하고 공개 여부를 관리합니다.</p>
         </div>
-        <Button onClick={() => openModal()} className="gap-2"><Plus size={16} /> 게시글 직접 등록</Button>
+        <div className="flex flex-wrap justify-end gap-2">
+          <Button variant="outline" onClick={handleSeed} disabled={seedPosts.isPending}>
+            {seedPosts.isPending ? '등록 중...' : '초기 게시글 110개 등록'}
+          </Button>
+          <Button onClick={() => openModal()} className="gap-2"><Plus size={16} /> 게시글 직접 등록</Button>
+        </div>
       </div>
 
       {isLoading ? (
