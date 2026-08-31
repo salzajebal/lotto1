@@ -306,7 +306,7 @@ function Home() {
           </a>
           <nav className={menuOpen ? 'nav mobile-open' : 'nav'} aria-label="주요 메뉴">
             <Link href="/reviews" onClick={() => setMenuOpen(false)}>당첨 후기</Link>
-            <a href="#video" onClick={() => setMenuOpen(false)}>당첨 영상</a>
+            <a href="#stories" onClick={() => setMenuOpen(false)}>당첨자 사진</a>
             <a href="#membership" onClick={() => setMenuOpen(false)}>멤버십</a>
             <Link href="/community" onClick={() => setMenuOpen(false)}>커뮤니티</Link>
             <a href="#support" onClick={() => setMenuOpen(false)}>고객센터</a>
@@ -410,7 +410,7 @@ function PublicPageHeader() {
         </Link>
         <nav className={menuOpen ? 'nav mobile-open' : 'nav'} aria-label="주요 메뉴">
           <Link href="/reviews" onClick={() => setMenuOpen(false)}>당첨 후기</Link>
-          <Link href="/#video" onClick={() => setMenuOpen(false)}>당첨 영상</Link>
+          <Link href="/#stories" onClick={() => setMenuOpen(false)}>당첨자 사진</Link>
           <Link href="/#membership" onClick={() => setMenuOpen(false)}>멤버십</Link>
           <Link href="/community" onClick={() => setMenuOpen(false)}>커뮤니티</Link>
           <Link href="/#support" onClick={() => setMenuOpen(false)}>고객센터</Link>

@@ -8,11 +8,18 @@ import interviewImageFour from '@assets/image_1788153339617.png';
 
 type Review = { id: number; memberName: string; drawNumber: number; rank: string; amount: number; content: string; createdAt: string };
 type Post = { id: number; authorName: string; category: string; title: string; content: string; replyCount: number; createdAt: string };
-const interviewStories = [
+const photoStories = [
   { image: interviewImageOne, draw: '912회', amount: '1,493,500,581원', label: '1등 당첨자 인터뷰' },
   { image: interviewImageTwo, draw: '860회', amount: '1,879,899,825원', label: '당첨 현장 사진' },
   { image: interviewImageThree, draw: '757회', amount: '739,839,858원', label: '당첨 현장 사진' },
   { image: interviewImageFour, draw: '800회', amount: '1,632,246,205원', label: '당첨 현장 사진' },
+];
+const ticketProofDetails = [
+  { draw: '1044회', issuedAt: '2022/12/03' },
+  { draw: '841회', issuedAt: '2023/07/15' },
+  { draw: '1105회', issuedAt: '2024/02/03' },
+  { draw: '1118회', issuedAt: '2023/05/04' },
+  { draw: '1222회', issuedAt: '2026/05/02' },
 ];
 
 const amount = (value: number) => value > 0 ? `${value.toLocaleString('ko-KR')}원` : '금액 비공개';
@@ -38,6 +45,8 @@ export function PortalHome({
   const recentPosts = posts.slice(0, 3);
   const ticketProofRecords = winningTicketImages.map((image, index) => ({
     image,
+    draw: ticketProofDetails[index]?.draw ?? `당첨 용지 ${String(index + 1).padStart(2, '0')}`,
+    issuedAt: ticketProofDetails[index]?.issuedAt ?? '일자 확인 필요',
     label: `실제 당첨 용지 ${String(index + 1).padStart(2, '0')}`,
   }));
   const latestTicketProofs = ticketProofRecords.slice(0, 3);
@@ -47,7 +56,7 @@ export function PortalHome({
     <section className="shell portal-section" id="proof">
       <div className="portal-section-head"><div><p className="portal-eyebrow">01 / RECENT PROOF</p><h2>최신 당첨 증빙</h2><p>실제 회원이 제출한 기록을 검토 후 공개합니다.</p></div><Link data-testid="link-all-winning-reviews" className="portal-text-link" href="/reviews">전체 보기 <ChevronRight size={15} /></Link></div>
       <div className="portal-receipts">
-        {latestTicketProofs.map((proof, index) => <article className="portal-receipt portal-photo-receipt" key={proof.image} data-testid={`card-photo-proof-${index + 1}`}><div className="portal-paper-top"><span>PHOTO PROOF</span><span>실제 제출 사진</span></div><div className="portal-proof-photo"><img src={proof.image} alt={`${proof.label} 증빙 사진`} /></div><div className="portal-receipt-main"><span>{proof.label}</span><strong>실제 당첨 용지</strong><b>사진 증빙 자료</b></div><div className="portal-receipt-meta"><span>회원 제출 자료</span><span>원본 흐림 처리 <ShieldCheck size={12} /></span></div></article>)}
+        {latestTicketProofs.map((proof, index) => <article className="portal-receipt portal-photo-receipt" key={proof.image} data-testid={`card-photo-proof-${index + 1}`}><div className="portal-paper-top"><span>PHOTO PROOF</span><span>{proof.issuedAt}</span></div><div className="portal-proof-photo"><img src={proof.image} alt={`${proof.draw} ${proof.label} 증빙 사진`} /></div><div className="portal-receipt-main"><span>{proof.draw}</span><strong>실제 당첨 용지</strong><b>사진 증빙 자료</b></div><div className="portal-receipt-meta"><span>회원 제출 자료</span><span>원본 흐림 처리 <ShieldCheck size={12} /></span></div></article>)}
         {recentReviews.map((review, index) => <article className="portal-receipt" key={review.id} data-testid={`card-winning-proof-${review.id}`}><div className="portal-paper-top"><span>LOTTO 6/45</span><span>{date(review.createdAt)}</span></div><div className="portal-receipt-main"><span>{review.drawNumber}회</span><strong>{review.rank}</strong><b>{amount(review.amount)}</b></div><BallRow draw={review.drawNumber} /><div className="portal-receipt-meta"><span>{review.memberName} 회원</span><span>회원 증빙 <ShieldCheck size={12} /></span></div><i className={`portal-stamp stamp-${index}`}>VERIFIED<br />RECORD</i></article>)}
         {reviewsLoading && <div className="public-empty">최신 당첨 증빙을 불러오는 중입니다.</div>}
         {reviewsError && <div className="public-empty public-error">당첨 증빙을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.</div>}
@@ -59,41 +68,40 @@ export function PortalHome({
           <p>개인정보가 흐림 처리된 실제 용지 사진입니다.</p>
         </div>
         <div className="portal-ticket-gallery-grid">
-          {winningTicketImages.map((image, index) => (
-            <figure className="portal-ticket-photo" key={image}>
-              <img src={image} alt={`로또 당첨 용지 사진 ${index + 1}`} />
-              <figcaption>당첨 용지 {String(index + 1).padStart(2, '0')}</figcaption>
+          {ticketProofRecords.map((proof) => (
+            <figure className="portal-ticket-photo" key={proof.image}>
+              <img src={proof.image} alt={`${proof.draw} 당첨 용지 사진`} />
+              <figcaption><b>{proof.draw}</b><span>{proof.issuedAt}</span></figcaption>
             </figure>
           ))}
         </div>
       </div>
       <div className="portal-table"><div className="portal-table-title"><div><p className="portal-eyebrow">ALL RECORDS</p><h3>전체 당첨 내역</h3></div><Link data-testid="link-winning-records" className="portal-text-link" href="/reviews">당첨 상세 보기 <ChevronRight size={15} /></Link></div><div className="portal-table-head"><span>회차 / 일자</span><span>당첨 등수</span><span>당첨 금액</span><span>회원</span><span /></div>
-        {ticketProofRecords.map((proof, index) => <div className="portal-table-row portal-table-photo-row" key={`table-${proof.image}`} data-testid={`row-photo-proof-${index + 1}`}><span><b>{proof.label}</b><small>실제 제출 사진</small></span><strong>사진 증빙</strong><b>실물 확인</b><span>회원 제출 자료</span><span aria-hidden="true" /></div>)}
+        {ticketProofRecords.map((proof, index) => <div className="portal-table-row portal-table-photo-row" key={`table-${proof.image}`} data-testid={`row-photo-proof-${index + 1}`}><span><b>{proof.draw}</b><small>{proof.issuedAt}</small></span><strong>사진 증빙</strong><b>실물 확인</b><span>회원 제출 자료</span><span aria-hidden="true" /></div>)}
         {recentReviews.map(review => <Link className="portal-table-row" key={review.id} href="/reviews" data-testid={`link-winning-detail-${review.id}`}><span><b>{review.drawNumber}회</b><small>{date(review.createdAt)}</small></span><strong className={review.rank === '1등' ? 'first' : ''}>{review.rank}</strong><b>{amount(review.amount)}</b><span>{review.memberName} 회원</span><ChevronRight size={15} /></Link>)}
         {!reviewsLoading && !reviewsError && !recentReviews.length && !ticketProofRecords.length && <div className="portal-table-empty">공개된 전체 당첨 내역이 없습니다.</div>}
       </div>
     </section>
-    <section className="portal-stories" id="video">
+    <section className="portal-stories" id="stories">
       <div className="shell">
         <div className="portal-section-head portal-dark-head">
-          <div><p className="portal-eyebrow gold">02 / MEMBER STORIES</p><h2>숫자 뒤에 있는<br /><em>사람의 이야기</em></h2><p>당첨 회원의 인터뷰와 후기를 함께 공개합니다.</p></div>
-          <button data-testid="button-all-interviews" className="portal-text-link light" onClick={() => onModal('video')}>인터뷰 전체보기 <ChevronRight size={15} /></button>
+          <div><p className="portal-eyebrow gold">02 / MEMBER STORIES</p><h2>숫자 뒤에 있는<br /><em>사람의 이야기</em></h2><p>당첨 회원의 사진과 후기를 함께 공개합니다.</p></div>
+          <Link data-testid="link-all-reviews" className="portal-text-link light" href="/reviews">후기 전체보기 <ChevronRight size={15} /></Link>
         </div>
         <div className="portal-story-grid">
-          <button data-testid="button-feature-interview" className="portal-feature-story" onClick={() => onModal('video')}>
-            <img className="portal-story-image" src={interviewStories[0].image} alt={`${interviewStories[0].draw} 당첨자 인터뷰`} />
+          <figure data-testid="card-featured-photo" className="portal-feature-story portal-image-feature">
+            <img className="portal-story-image" src={photoStories[0].image} alt={`${photoStories[0].draw} 당첨자 현장 사진`} />
             <span className="portal-story-image-shade" />
-            <span className="portal-play"><Play size={18} fill="currentColor" /></span>
-            <div className="portal-story-copy"><small>검증된 당첨 회원 인터뷰 · {interviewStories[0].draw}</small><h3>“당첨의 순간과<br />그 후의 이야기를 전합니다.”</h3><p>{interviewStories[0].amount}</p></div>
-          </button>
+            <div className="portal-story-copy"><small>당첨자 현장 사진 · {photoStories[0].draw}</small><h3>“당첨의 순간과<br />그 후의 이야기를 사진으로 전합니다.”</h3><p>{photoStories[0].amount}</p></div>
+          </figure>
           <div className="portal-photo-archive" aria-label="당첨자 사진 기록">
             <div className="portal-photo-archive-head">
               <small>IMAGE ARCHIVE</small>
               <strong>당첨자 사진 기록</strong>
-              <span>영상과 별도로 확인하는 당첨 현장 이미지입니다.</span>
+              <span>영상이 아닌 당첨 현장 이미지입니다.</span>
             </div>
             <div className="portal-photo-grid">
-              {interviewStories.slice(1).map((story, index) => (
+              {photoStories.slice(1).map((story, index) => (
                 <figure className="portal-photo-card" key={story.image} data-testid={`card-winning-photo-${index + 2}`}>
                   <img src={story.image} alt={`${story.draw} ${story.label}`} />
                   <figcaption><small>{story.draw}</small><b>{story.label}</b><i>{story.amount}</i></figcaption>
