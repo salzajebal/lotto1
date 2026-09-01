@@ -32,11 +32,6 @@ export function Refined() {
                 <br />
                 한 회 한 회의 기록까지 차분하게 살핍니다.
               </p>
-              <div className="footer-refined-company-info" aria-label="법인 및 사업자 정보">
-                <p><b>법인명 :</b> 주식회사 로또리코</p>
-                <p><b>대표자 :</b> 이은수</p>
-                <p><b>소재지 :</b> 경기도 파주시 광탄면 278</p>
-              </div>
             </section>
 
             <section className="footer-refined-contact" aria-label="연락처 및 대표자 정보">
@@ -69,6 +64,11 @@ export function Refined() {
           </div>
 
           <div className="footer-refined-bottom">
+            <div className="footer-refined-company-info" aria-label="법인 및 사업자 정보">
+              <span>법인명 : 주식회사 로또리코</span>
+              <span>대표자 : 이은수</span>
+              <span>경기도 파주시 광탄면 278</span>
+            </div>
             <span>© 2025 로또리코</span>
             <span>본 페이지의 번호는 분석 예시이며 당첨을 보장하지 않습니다.</span>
           </div>
