@@ -41,9 +41,11 @@ export function Refined() {
                   070-8058-9742
                 </a>
               </div>
-              <div className="footer-refined-contact-card">
+            <div className="footer-refined-contact-card footer-refined-contact-card--owner">
                 <b>대표자</b>
                 <span>이은수</span>
+              <small>법인명 : 주식회사 로또리코</small>
+              <small>경기도 파주시 광탄면 278</small>
               </div>
             </section>
 
@@ -64,10 +66,6 @@ export function Refined() {
           </div>
 
           <div className="footer-refined-bottom">
-            <div className="footer-refined-company-info" aria-label="법인 및 사업자 정보">
-              <span>법인명 : 주식회사 로또리코　대표자 : 이은수</span>
-              <span>경기도 파주시 광탄면 278</span>
-            </div>
             <span>© 2025 로또리코</span>
             <span>본 페이지의 번호는 분석 예시이며 당첨을 보장하지 않습니다.</span>
           </div>

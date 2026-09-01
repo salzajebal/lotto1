@@ -136,9 +136,11 @@ export function PortalHome({
                 <b>고객센터</b>
                 <a href="tel:070-8058-9742" aria-label="고객센터 전화 070-8058-9742">070-8058-9742</a>
               </div>
-              <div className="portal-footer-contact-card">
+              <div className="portal-footer-contact-card portal-footer-contact-card--owner">
                 <b>대표자</b>
                 <span>이은수</span>
+                <small>법인명 : 주식회사 로또리코</small>
+                <small>경기도 파주시 광탄면 278</small>
               </div>
             </div>
             <nav className="portal-footer-nav" aria-label="로또리코 주요 메뉴">
@@ -149,10 +151,6 @@ export function PortalHome({
             </nav>
           </div>
           <div className="portal-footer-bottom">
-            <div className="portal-footer-company-info" aria-label="법인 및 사업자 정보">
-              <span>법인명 : 주식회사 로또리코　대표자 : 이은수</span>
-              <span>경기도 파주시 광탄면 278</span>
-            </div>
             <small>© 2025 로또리코</small>
             <small>본 페이지의 번호는 분석 예시이며 당첨을 보장하지 않습니다.</small>
           </div>
