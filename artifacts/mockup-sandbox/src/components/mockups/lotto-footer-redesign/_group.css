@@ -221,6 +221,26 @@
   line-height: 1.8;
 }
 
+.footer-refined-company-info {
+  display: grid;
+  gap: 5px;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid #1b3552;
+}
+
+.footer-refined-company-info p {
+  margin: 0;
+  color: #8fa7ba;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.footer-refined-company-info b {
+  color: #c7d4de;
+  font-weight: 700;
+}
+
 .footer-refined-contact {
   display: grid;
   grid-template-columns: 1fr 1fr;

@@ -130,6 +130,11 @@ export function PortalHome({
             <div className="portal-footer-message">
               <p className="portal-footer-kicker">LOTTO RECORD / 2025</p>
               <p>번호를 고르는 순간부터<br />한 회 한 회의 기록까지 차분하게 살핍니다.</p>
+              <div className="portal-footer-company-info" aria-label="법인 및 사업자 정보">
+                <p><b>법인명 :</b> 주식회사 로또리코</p>
+                <p><b>대표자 :</b> 이은수</p>
+                <p><b>소재지 :</b> 경기도 파주시 광탄면 278</p>
+              </div>
             </div>
             <div className="portal-footer-contact" aria-label="고객센터 및 대표자 정보">
               <div className="portal-footer-contact-card">

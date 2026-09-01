@@ -7,6 +7,6 @@ export const modules: ModuleMap = {
   "./components/mockups/lotto-home-data/DataCenter.tsx": () => import("../components/mockups/lotto-home-data/DataCenter.tsx"),
   "./components/mockups/lotto-home-proof/ProofArchive.tsx": () => import("../components/mockups/lotto-home-proof/ProofArchive.tsx"),
   "./components/mockups/lotto-portal-a/PortalArchive.tsx": () => import("../components/mockups/lotto-portal-a/PortalArchive.tsx"),
-  "./components/mockups/lotto-portal-c/PortalUnified.tsx": () => import("../components/mockups/lotto-portal-c/PortalUnified.tsx"),
-  "./components/mockups/lotto-portal-b/PortalAnalysis.tsx": () => import("../components/mockups/lotto-portal-b/PortalAnalysis.tsx")
+  "./components/mockups/lotto-portal-b/PortalAnalysis.tsx": () => import("../components/mockups/lotto-portal-b/PortalAnalysis.tsx"),
+  "./components/mockups/lotto-portal-c/PortalUnified.tsx": () => import("../components/mockups/lotto-portal-c/PortalUnified.tsx")
 };
