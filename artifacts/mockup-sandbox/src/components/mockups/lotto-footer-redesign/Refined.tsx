@@ -65,8 +65,7 @@ export function Refined() {
 
           <div className="footer-refined-bottom">
             <div className="footer-refined-company-info" aria-label="법인 및 사업자 정보">
-              <span>법인명 : 주식회사 로또리코</span>
-              <span>대표자 : 이은수</span>
+              <span>법인명 : 주식회사 로또리코　대표자 : 이은수</span>
               <span>경기도 파주시 광탄면 278</span>
             </div>
             <span>© 2025 로또리코</span>
