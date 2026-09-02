@@ -833,12 +833,14 @@ router.post("/admin/databases/import", requireOwner, receiveExcel, async (req, r
 router.get("/admin/members", async (req, res): Promise<void> => {
   const search = text(req.query.search);
   const status = text(req.query.status);
+  const classification = text(req.query.classification);
   const gradeId = int(req.query.gradeId, 0);
   const page = Math.max(1, int(req.query.page, 1));
   const limit = 10;
   const filters = [];
   if (search) filters.push(or(ilike(membersTable.username, `%${search}%`), ilike(membersTable.name, `%${search}%`), ilike(membersTable.phone, `%${search}%`), ilike(membersTable.email, `%${search}%`)));
   if (status && status !== "all") filters.push(eq(membersTable.status, status));
+  if (classification && classification !== "all") filters.push(eq(membersTable.classification, classification));
   if (gradeId) filters.push(eq(membersTable.gradeId, gradeId));
   if (!isOwner(req)) filters.push(eq(membersTable.assignedStaffId, req.adminUser!.id));
   const where = filters.length ? and(...filters) : undefined;
@@ -871,6 +873,7 @@ router.post("/admin/members", async (req, res): Promise<void> => {
     phone: z.string().trim().default(""),
     gradeId: z.number().int().nullable().optional(),
     status: z.enum(["pending", "active", "inactive", "rejected"]).default("active"),
+    classification: z.enum(["관리", "악질"]).default("관리"),
     assignedStaffId: z.number().int().nullable().optional(),
     paymentAmount: z.number().int().nonnegative().default(0),
     monthlyRevenue: z.number().int().nonnegative().default(0),
@@ -911,6 +914,7 @@ router.patch("/admin/members/:id", async (req, res): Promise<void> => {
     phone: z.string().trim().optional(),
     gradeId: z.number().int().nullable().optional(),
     status: z.enum(["pending", "active", "inactive", "rejected"]).optional(),
+    classification: z.enum(["관리", "악질"]).optional(),
     assignedStaffId: z.number().int().nullable().optional(),
     paymentAmount: z.number().int().nonnegative().optional(),
     monthlyRevenue: z.number().int().nonnegative().optional(),

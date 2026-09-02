@@ -95,10 +95,11 @@ export function useDashboard() {
   return useQuery({ queryKey: ['adminDashboard'], queryFn: () => fetcher(`${API_BASE}/dashboard`) });
 }
 
-export function useMembers(params?: { search?: string, status?: string, gradeId?: number; page?: number }) {
+export function useMembers(params?: { search?: string, status?: string, classification?: string, gradeId?: number; page?: number }) {
   const qs = new URLSearchParams();
   if (params?.search) qs.set('search', params.search);
   if (params?.status) qs.set('status', params.status);
+  if (params?.classification) qs.set('classification', params.classification);
   if (params?.gradeId) qs.set('gradeId', String(params.gradeId));
   if (params?.page) qs.set('page', String(params.page));
   return useQuery({ queryKey: ['adminMembers', params], queryFn: () => fetcher(`${API_BASE}/members?${qs.toString()}`) });

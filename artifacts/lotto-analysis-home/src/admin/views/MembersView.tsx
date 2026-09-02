@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMembers, useGrades, useStaff, useCreateMember, useUpdateMember, useDeleteMember } from '../api';
 import { Card, Table, Th, Td, Badge, Button, Input, Select, Modal, Label, Textarea } from '../components/UI';
 import { Search, Plus, Edit2, Eye, Trash2, Loader2 } from 'lucide-react';
@@ -17,16 +17,36 @@ const memberStatusVariants: Record<string, 'default' | 'success' | 'warning' | '
   rejected: 'danger',
 };
 
+const memberClassificationLabels: Record<string, string> = {
+  관리: '관리',
+  악질: '악질',
+};
+
+const memberClassificationVariants: Record<string, 'default' | 'success' | 'warning' | 'danger'> = {
+  관리: 'success',
+  악질: 'danger',
+};
+
 const formatDateTime = (value?: string) => value ? new Date(value).toLocaleString('ko-KR') : '-';
 
-export default function MembersView() {
+export default function MembersView({ currentUser }: { currentUser: any }) {
+  const isOwner = currentUser?.role === 'owner';
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [classificationFilter, setClassificationFilter] = useState('all');
   const [gradeFilter, setGradeFilter] = useState<number>(0);
   const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setDebouncedSearch(search.trim());
+      setPage(1);
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [search]);
   
-  const { data, isLoading } = useMembers({ search: debouncedSearch, status: statusFilter, gradeId: gradeFilter, page });
+  const { data, isLoading } = useMembers({ search: debouncedSearch, status: statusFilter, classification: classificationFilter, gradeId: gradeFilter, page });
   const members = data?.items || [];
   const pagination = data?.pagination;
   const { data: grades } = useGrades();
@@ -41,7 +61,7 @@ export default function MembersView() {
   const deleteMember = useDeleteMember();
 
   const [form, setForm] = useState({
-    username: '', name: '', email: '', phone: '', gradeId: 0, status: 'active', assignedStaffId: 0, paymentAmount: 0, monthlyRevenue: 0, notes: ''
+    username: '', name: '', email: '', phone: '', gradeId: 0, status: 'active', classification: '관리', assignedStaffId: 0, paymentAmount: 0, monthlyRevenue: 0, notes: ''
   });
 
   const openModal = (member?: any) => {
@@ -49,13 +69,13 @@ export default function MembersView() {
       setEditingId(member.id);
       setForm({
         username: member.username || '', name: member.name, email: member.email || '', phone: member.phone || '',
-        gradeId: member.gradeId || 0, status: member.status, assignedStaffId: member.assignedStaffId || 0,
+        gradeId: member.gradeId || 0, status: member.status, classification: member.classification || '관리', assignedStaffId: member.assignedStaffId || 0,
         paymentAmount: member.paymentAmount || 0, monthlyRevenue: member.monthlyRevenue || 0, notes: member.notes || ''
       });
     } else {
       setEditingId(null);
       setForm({
-        username: '', name: '', email: '', phone: '', gradeId: grades?.[0]?.id || 0, status: 'active', assignedStaffId: 0, paymentAmount: 0, monthlyRevenue: 0, notes: ''
+        username: '', name: '', email: '', phone: '', gradeId: grades?.[0]?.id || 0, status: 'active', classification: '관리', assignedStaffId: 0, paymentAmount: 0, monthlyRevenue: 0, notes: ''
       });
     }
     setModalOpen(true);
@@ -63,11 +83,12 @@ export default function MembersView() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const { assignedStaffId, ...editableFields } = form;
     const payload = {
-      ...form,
+      ...editableFields,
       username: form.username || undefined,
       gradeId: form.gradeId || null,
-      assignedStaffId: form.assignedStaffId || null,
+      ...(isOwner ? { assignedStaffId: assignedStaffId || null } : {}),
       paymentAmount: Number(form.paymentAmount),
       monthlyRevenue: Number(form.monthlyRevenue)
     };
@@ -105,11 +126,9 @@ export default function MembersView() {
           <Search size={16} className="absolute left-3 top-2.5 text-[var(--ad-muted)]" />
           <Input 
             className="pl-9" 
-            placeholder="아이디, 이름, 전화번호 검색..."
+            placeholder="아이디, 이름, 전화번호, 이메일 검색..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') { setDebouncedSearch(search); setPage(1); } }}
-            onBlur={() => { setDebouncedSearch(search); setPage(1); }}
           />
         </div>
         <Select className="w-full sm:w-48" value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }}>
@@ -118,6 +137,11 @@ export default function MembersView() {
            <option value="active">승인 완료</option>
           <option value="inactive">비활성</option>
            <option value="rejected">반려</option>
+        </Select>
+        <Select className="w-full sm:w-48" value={classificationFilter} onChange={e => { setClassificationFilter(e.target.value); setPage(1); }}>
+          <option value="all">전체 분류</option>
+          <option value="관리">관리 회원</option>
+          <option value="악질">악질 회원</option>
         </Select>
         <Select className="w-full sm:w-48" value={gradeFilter} onChange={e => { setGradeFilter(Number(e.target.value)); setPage(1); }}>
           <option value={0}>전체 등급</option>
@@ -132,6 +156,7 @@ export default function MembersView() {
           <thead>
             <tr>
               <Th>이름</Th>
+               <Th>분류</Th>
               <Th>아이디</Th>
               <Th>전화번호</Th>
               <Th>가입일</Th>
@@ -146,6 +171,11 @@ export default function MembersView() {
             {members?.map((m: any) => (
               <tr key={m.id} className="hover:bg-[var(--ad-panel-hover)] transition-colors">
                 <Td className="font-semibold text-white">{m.name}</Td>
+                 <Td>
+                   <Badge variant={memberClassificationVariants[m.classification] || 'default'}>
+                     {memberClassificationLabels[m.classification] || m.classification || '관리'}
+                   </Badge>
+                 </Td>
                 <Td>{m.username || <span className="text-[var(--ad-muted)]">-</span>}</Td>
                 <Td>
                   <div className="text-sm">{m.phone || '-'}</div>
@@ -178,7 +208,7 @@ export default function MembersView() {
               </tr>
             ))}
             {members?.length === 0 && (
-              <tr><Td colSpan={9} className="text-center py-8 text-[var(--ad-muted)]">검색된 회원이 없습니다.</Td></tr>
+               <tr><Td colSpan={10} className="text-center py-8 text-[var(--ad-muted)]">검색된 회원이 없습니다.</Td></tr>
             )}
           </tbody>
         </Table>
@@ -213,6 +243,7 @@ export default function MembersView() {
                <div><Label>전화번호</Label><p className="text-sm text-white">{detailMember.phone || '-'}</p></div>
                <div><Label>이메일</Label><p className="text-sm text-white">{detailMember.email || '-'}</p></div>
                <div><Label>회원 등급</Label><p className="text-sm text-white">{detailMember.gradeName || '등급 미지정'}</p></div>
+                <div><Label>회원 분류</Label><Badge variant={memberClassificationVariants[detailMember.classification] || 'default'}>{memberClassificationLabels[detailMember.classification] || detailMember.classification || '관리'}</Badge></div>
                <div><Label>담당자</Label><p className="text-sm text-white">{detailMember.staffName || '미배정'}</p></div>
                <div><Label>실제 결제금액</Label><p className="text-sm text-[var(--ad-gold)]">₩{(detailMember.paymentAmount || 0).toLocaleString()}</p></div>
                <div><Label>월 예상 수익</Label><p className="text-sm text-[var(--ad-gold)]">₩{(detailMember.monthlyRevenue || 0).toLocaleString()}</p></div>
@@ -255,6 +286,13 @@ export default function MembersView() {
                  <option value="rejected">반려</option>
               </Select>
             </div>
+             <div>
+               <Label>회원 분류</Label>
+               <Select value={form.classification} onChange={e => setForm({...form, classification: e.target.value})}>
+                 <option value="관리">관리</option>
+                 <option value="악질">악질</option>
+               </Select>
+             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -274,13 +312,15 @@ export default function MembersView() {
                 {grades?.filter((g: any) => g.active).map((g: any) => <option key={g.id} value={g.id}>{g.name}</option>)}
               </Select>
             </div>
-            <div>
-              <Label>담당 직원</Label>
-              <Select value={form.assignedStaffId} onChange={e => setForm({...form, assignedStaffId: Number(e.target.value)})}>
-                <option value={0}>미배정</option>
-                {staffList?.filter((s: any) => s.active).map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </Select>
-            </div>
+             {isOwner && (
+               <div>
+                 <Label>담당 직원</Label>
+                 <Select value={form.assignedStaffId} onChange={e => setForm({...form, assignedStaffId: Number(e.target.value)})}>
+                   <option value={0}>미배정</option>
+                   {staffList?.filter((s: any) => s.active).map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                 </Select>
+               </div>
+             )}
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>

@@ -132,7 +132,7 @@ function AdminLayout({ user }: { user: any }) {
       <main className="flex-1 flex flex-col min-w-0 bg-[var(--ad-bg)] h-screen overflow-y-auto admin-scrollbar">
         <div className="p-6 md:p-8 max-w-[1400px] w-full mx-auto admin-animate-in">
           {activeView === 'dashboard' && <DashboardView user={user} onNavigate={(v: string) => setActiveView(v as ViewType)} />}
-          {activeView === 'members' && <MembersView />}
+          {activeView === 'members' && <MembersView currentUser={user} />}
           {activeView === 'databases' && <DatabasesView user={user} />}
           {activeView === 'inquiries' && <InquiriesView user={user} />}
           {activeView === 'reviews' && <ReviewsView />}
