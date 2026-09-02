@@ -24,7 +24,7 @@ export default function DatabaseRowsModal({
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const { data, isLoading, error } = useDatabaseRows(database?.id ?? null, { search, page, limit: 50 });
-  const { data: notes, isLoading: notesLoading } = useDatabaseNotes(database?.id ?? null);
+  const { data: notes, isLoading: notesLoading } = useDatabaseNotes(database?.id ?? null, canAssign);
   const createNote = useCreateDatabaseNote();
   const assignRows = useAssignDatabaseRows();
   const unassignRows = useUnassignDatabaseRows();
@@ -139,8 +139,13 @@ export default function DatabaseRowsModal({
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <p className="text-sm text-[var(--ad-muted)]">등록 데이터</p>
-              <p className="text-xl font-bold text-white">{Number(data?.pagination?.total ?? database?.entryCount ?? 0).toLocaleString()}건</p>
+              <p className="text-sm text-[var(--ad-muted)]">등록 데이터</p>
+              <p className="text-xl font-bold text-white">
+                {Number(data?.pagination?.total ?? (canAssign ? database?.entryCount : 0)).toLocaleString()}건
+              </p>
+              {!canAssign && (
+                <p className="mt-1 text-xs text-[var(--ad-info)]">본인에게 배정된 데이터 행만 표시됩니다.</p>
+              )}
               {data?.assignmentSummary && (
                 <p className="mt-1 text-xs text-[var(--ad-muted)]">
                   배정 {Number(data.assignmentSummary.assigned).toLocaleString()}건 · 미배정 {Number(data.assignmentSummary.unassigned).toLocaleString()}건
@@ -188,7 +193,8 @@ export default function DatabaseRowsModal({
           </form>
         )}
 
-        <section className="rounded-lg border border-[var(--ad-border)] bg-[var(--ad-bg)] p-4">
+        {canAssign && (
+          <section className="rounded-lg border border-[var(--ad-border)] bg-[var(--ad-bg)] p-4">
           <div className="mb-3 flex items-center gap-2">
             <MessageSquareText size={16} className="text-[var(--ad-gold)]" />
             <div>
@@ -232,7 +238,8 @@ export default function DatabaseRowsModal({
             </Button>
           </form>
           {createNote.isError && <p className="mt-2 text-xs text-[#F85149]">{createNote.error instanceof Error ? createNote.error.message : '메모 저장에 실패했습니다.'}</p>}
-        </section>
+          </section>
+        )}
 
         {editingRow && (
           <section className="rounded-lg border border-[var(--ad-gold)] bg-[var(--ad-gold-bg)] p-4">

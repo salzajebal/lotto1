@@ -331,11 +331,11 @@ export function useUpdateDatabaseRowNote() {
   });
 }
 
-export function useDatabaseNotes(databaseId: number | null) {
+export function useDatabaseNotes(databaseId: number | null, enabled = true) {
   return useQuery({
     queryKey: ['adminDatabaseNotes', databaseId],
     queryFn: () => fetcher(`${API_BASE}/databases/${databaseId}/notes`),
-    enabled: databaseId != null,
+    enabled: databaseId != null && enabled,
   });
 }
 

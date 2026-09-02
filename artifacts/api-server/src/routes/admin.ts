@@ -486,7 +486,6 @@ async function canAccessDatabaseRow(req: Request, databaseId: number, rowId: num
   const [row] = await db.select({
     rowId: analysisDatabaseRowsTable.id,
     rowAssignedStaffId: analysisDatabaseRowsTable.assignedStaffId,
-    databaseAssignedStaffId: analysisDatabasesTable.assignedStaffId,
   })
     .from(analysisDatabaseRowsTable)
     .innerJoin(analysisDatabasesTable, eq(analysisDatabaseRowsTable.databaseId, analysisDatabasesTable.id))
@@ -495,10 +494,7 @@ async function canAccessDatabaseRow(req: Request, databaseId: number, rowId: num
       eq(analysisDatabaseRowsTable.databaseId, databaseId),
     ))
     .limit(1);
-  return Boolean(row && (
-    row.databaseAssignedStaffId === req.adminUser!.id
-    || row.rowAssignedStaffId === req.adminUser!.id
-  ));
+  return Boolean(row && row.rowAssignedStaffId === req.adminUser!.id);
 }
 
 router.use(cookieParser());
@@ -1215,13 +1211,7 @@ router.get("/admin/databases/:id/rows", async (req, res): Promise<void> => {
   const search = text(req.query.search);
   const filters = [eq(analysisDatabaseRowsTable.databaseId, databaseId)];
   if (!isOwner(req)) {
-    const [database] = await db.select({ assignedStaffId: analysisDatabasesTable.assignedStaffId })
-      .from(analysisDatabasesTable)
-      .where(eq(analysisDatabasesTable.id, databaseId))
-      .limit(1);
-    if (database?.assignedStaffId !== req.adminUser!.id) {
-      filters.push(eq(analysisDatabaseRowsTable.assignedStaffId, req.adminUser!.id));
-    }
+    filters.push(eq(analysisDatabaseRowsTable.assignedStaffId, req.adminUser!.id));
   }
   if (search) {
     filters.push(or(
@@ -1380,7 +1370,7 @@ router.patch("/admin/databases/:id/rows/:rowId/note", async (req, res): Promise<
   res.json(row);
 });
 
-router.get("/admin/databases/:id/notes", async (req, res): Promise<void> => {
+router.get("/admin/databases/:id/notes", requireOwner, async (req, res): Promise<void> => {
   const id = int(req.params.id);
   if (!(await canAccessDatabase(req, id))) {
     res.status(403).json({ error: "이 분석 DB의 메모를 조회할 권한이 없습니다." });
@@ -1394,7 +1384,7 @@ router.get("/admin/databases/:id/notes", async (req, res): Promise<void> => {
   res.json(notes.map(({ note, staffName }) => ({ ...note, staffName })));
 });
 
-router.post("/admin/databases/:id/notes", async (req, res): Promise<void> => {
+router.post("/admin/databases/:id/notes", requireOwner, async (req, res): Promise<void> => {
   const id = int(req.params.id);
   const body = parse(z.object({
     content: z.string().trim().min(1, "메모 내용을 입력해주세요.").max(3000, "메모는 3,000자 이내로 작성해주세요."),
