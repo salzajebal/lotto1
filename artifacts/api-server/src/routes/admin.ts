@@ -658,11 +658,23 @@ router.patch("/admin/site-settings", requireOwner, async (req, res): Promise<voi
 });
 
 router.get("/admin/dashboard", async (req, res): Promise<void> => {
-  const staffFilter = isOwner(req) ? undefined : eq(membersTable.assignedStaffId, req.adminUser!.id);
-  const databaseFilter = isOwner(req) ? undefined : eq(analysisDatabasesTable.assignedStaffId, req.adminUser!.id);
-  const inquiryFilter = isOwner(req)
+  const owner = isOwner(req);
+  const staffId = req.adminUser!.id;
+  const staffFilter = owner ? undefined : eq(membersTable.assignedStaffId, staffId);
+  const databaseFilter = owner
+    ? undefined
+    : or(
+      eq(analysisDatabasesTable.assignedStaffId, staffId),
+      sql`exists (
+        select 1
+        from ${analysisDatabaseRowsTable}
+        where ${analysisDatabaseRowsTable.databaseId} = ${analysisDatabasesTable.id}
+          and ${analysisDatabaseRowsTable.assignedStaffId} = ${staffId}
+      )`,
+    );
+  const inquiryFilter = owner
     ? eq(supportInquiriesTable.status, "new")
-    : and(eq(supportInquiriesTable.status, "new"), eq(supportInquiriesTable.assignedStaffId, req.adminUser!.id));
+    : and(eq(supportInquiriesTable.status, "new"), eq(supportInquiriesTable.assignedStaffId, staffId));
   const [[members], [databases], [reviews], [inquiries], [revenue], staff, recentInquiries] = await Promise.all([
     db.select({ count: sql<number>`count(*)::int` }).from(membersTable).where(staffFilter),
     db.select({ count: sql<number>`count(*)::int` }).from(analysisDatabasesTable).where(databaseFilter),
@@ -671,7 +683,7 @@ router.get("/admin/dashboard", async (req, res): Promise<void> => {
     db.select({ total: sql<number>`coalesce(sum(${membersTable.monthlyRevenue}), 0)::int` }).from(membersTable).where(staffFilter),
     db.select({ id: adminUsersTable.id, name: adminUsersTable.name, username: adminUsersTable.username, role: adminUsersTable.role, active: adminUsersTable.active }).from(adminUsersTable).orderBy(desc(adminUsersTable.createdAt)).limit(5),
     db.select().from(supportInquiriesTable)
-      .where(isOwner(req) ? undefined : eq(supportInquiriesTable.assignedStaffId, req.adminUser!.id))
+      .where(owner ? undefined : eq(supportInquiriesTable.assignedStaffId, staffId))
       .orderBy(desc(supportInquiriesTable.createdAt)).limit(5),
   ]);
   res.json({
@@ -1118,19 +1130,40 @@ router.delete("/admin/grades/:id", requireOwner, async (req, res): Promise<void>
 router.get("/admin/databases", async (req, res): Promise<void> => {
   const page = Math.max(1, int(req.query.page, 1));
   const limit = 10;
-  const where = isOwner(req)
+  const owner = isOwner(req);
+  const staffId = req.adminUser!.id;
+  const where = owner
     ? undefined
-    : eq(analysisDatabasesTable.assignedStaffId, req.adminUser!.id);
+    : or(
+      eq(analysisDatabasesTable.assignedStaffId, staffId),
+      sql`exists (
+        select 1
+        from ${analysisDatabaseRowsTable}
+        where ${analysisDatabaseRowsTable.databaseId} = ${analysisDatabasesTable.id}
+          and ${analysisDatabaseRowsTable.assignedStaffId} = ${staffId}
+      )`,
+    );
+  const visibleEntryCount = owner
+    ? sql<number>`(
+        select count(*)::int
+        from ${analysisDatabaseRowsTable}
+        where ${analysisDatabaseRowsTable.databaseId} = ${analysisDatabasesTable.id}
+      )`
+    : sql<number>`(
+        select count(*)::int
+        from ${analysisDatabaseRowsTable}
+        where ${analysisDatabaseRowsTable.databaseId} = ${analysisDatabasesTable.id}
+          and (
+            ${analysisDatabasesTable.assignedStaffId} = ${staffId}
+            or ${analysisDatabaseRowsTable.assignedStaffId} = ${staffId}
+          )
+      )`;
   const [[count], rows] = await Promise.all([
     db.select({ count: sql<number>`count(*)::int` }).from(analysisDatabasesTable).where(where),
     db.select({
-    database: analysisDatabasesTable,
-    staffName: adminUsersTable.name,
-    entryCount: sql<number>`(
-      select count(*)::int
-      from ${analysisDatabaseRowsTable}
-      where ${analysisDatabaseRowsTable.databaseId} = ${analysisDatabasesTable.id}
-    )`,
+      database: analysisDatabasesTable,
+      staffName: adminUsersTable.name,
+      entryCount: visibleEntryCount,
      assignedRowCount: sql<number>`(
        select count(*)::int
        from ${analysisDatabaseRowsTable}
@@ -1155,7 +1188,9 @@ router.get("/admin/databases", async (req, res): Promise<void> => {
   res.json({
     items: rows.map(({ database, staffName, entryCount, assignedRowCount, unassignedRowCount }) => ({
       ...database,
-      staffName,
+      staffName: owner || database.assignedStaffId === staffId
+        ? staffName
+        : `${req.adminUser!.name} (행별 배정)`,
       entryCount,
       assignedRowCount,
       unassignedRowCount,
