@@ -144,7 +144,7 @@ export default function DatabaseRowsModal({
                 {Number(data?.pagination?.total ?? (canAssign ? database?.entryCount : 0)).toLocaleString()}건
               </p>
               {!canAssign && (
-                <p className="mt-1 text-xs text-[var(--ad-info)]">본인에게 배정된 데이터 행만 표시됩니다.</p>
+                <p className="mt-1 text-xs text-[var(--ad-info)]">본인에게 배정된 DB 또는 데이터 행만 표시됩니다.</p>
               )}
               {data?.assignmentSummary && (
                 <p className="mt-1 text-xs text-[var(--ad-muted)]">

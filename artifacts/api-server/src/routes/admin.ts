@@ -486,6 +486,7 @@ async function canAccessDatabaseRow(req: Request, databaseId: number, rowId: num
   const [row] = await db.select({
     rowId: analysisDatabaseRowsTable.id,
     rowAssignedStaffId: analysisDatabaseRowsTable.assignedStaffId,
+    databaseAssignedStaffId: analysisDatabasesTable.assignedStaffId,
   })
     .from(analysisDatabaseRowsTable)
     .innerJoin(analysisDatabasesTable, eq(analysisDatabaseRowsTable.databaseId, analysisDatabasesTable.id))
@@ -494,7 +495,10 @@ async function canAccessDatabaseRow(req: Request, databaseId: number, rowId: num
       eq(analysisDatabaseRowsTable.databaseId, databaseId),
     ))
     .limit(1);
-  return Boolean(row && row.rowAssignedStaffId === req.adminUser!.id);
+  return Boolean(row && (
+    row.databaseAssignedStaffId === req.adminUser!.id
+    || row.rowAssignedStaffId === req.adminUser!.id
+  ));
 }
 
 router.use(cookieParser());
@@ -1211,7 +1215,13 @@ router.get("/admin/databases/:id/rows", async (req, res): Promise<void> => {
   const search = text(req.query.search);
   const filters = [eq(analysisDatabaseRowsTable.databaseId, databaseId)];
   if (!isOwner(req)) {
-    filters.push(eq(analysisDatabaseRowsTable.assignedStaffId, req.adminUser!.id));
+    const [database] = await db.select({ assignedStaffId: analysisDatabasesTable.assignedStaffId })
+      .from(analysisDatabasesTable)
+      .where(eq(analysisDatabasesTable.id, databaseId))
+      .limit(1);
+    if (database?.assignedStaffId !== req.adminUser!.id) {
+      filters.push(eq(analysisDatabaseRowsTable.assignedStaffId, req.adminUser!.id));
+    }
   }
   if (search) {
     filters.push(or(

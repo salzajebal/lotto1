@@ -147,13 +147,15 @@ export default function DatabasesView({ user }: { user: { role: string } }) {
                      >
                        <Eye size={14} /> {Number(db.entryCount || 0).toLocaleString()}건
                      </button>
-                     <button
-                       type="button"
-                       className="inline-flex items-center gap-1.5 text-[var(--ad-gold)] hover:text-white transition-colors"
-                       onClick={() => setDetailDatabase(db)}
-                     >
-                       <MessageSquareText size={14} /> 메모
-                     </button>
+                      {canAssign && (
+                        <button
+                          type="button"
+                          className="inline-flex items-center gap-1.5 text-[var(--ad-gold)] hover:text-white transition-colors"
+                          onClick={() => setDetailDatabase(db)}
+                        >
+                          <MessageSquareText size={14} /> 메모
+                        </button>
+                      )}
                    </div>
                 </Td>
                 <Td>{db.staffName ? <span className="text-[var(--ad-info)]">{db.staffName}</span> : <span className="text-[var(--ad-muted)]">미배정</span>}</Td>
