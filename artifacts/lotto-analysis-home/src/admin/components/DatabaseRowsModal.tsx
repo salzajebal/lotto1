@@ -11,6 +11,8 @@ import {
 } from '../api';
 import { Button, Input, Modal, Select, Table, Td, Th, Textarea } from './UI';
 
+const ROWS_PER_PAGE = 200;
+
 export default function DatabaseRowsModal({
   database,
   canAssign,
@@ -23,7 +25,7 @@ export default function DatabaseRowsModal({
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
-  const { data, isLoading, error } = useDatabaseRows(database?.id ?? null, { search, page, limit: 50 });
+  const { data, isLoading, error } = useDatabaseRows(database?.id ?? null, { search, page, limit: ROWS_PER_PAGE });
   const { data: notes, isLoading: notesLoading } = useDatabaseNotes(database?.id ?? null, canAssign);
   const createNote = useCreateDatabaseNote();
   const assignRows = useAssignDatabaseRows();
@@ -156,7 +158,7 @@ export default function DatabaseRowsModal({
             <Input
               value={searchInput}
               onChange={(event) => setSearchInput(event.target.value)}
-              placeholder="이름, 전화번호, 날짜 검색"
+              placeholder="이름, 전화번호, 날짜, 메모 내용 검색"
             />
             <Button type="submit" variant="secondary" className="gap-2 shrink-0">
               <Search size={15} /> 검색
@@ -313,23 +315,26 @@ export default function DatabaseRowsModal({
                       />
                     </Td>
                   )}
-                  <Td className="text-[var(--ad-muted)]">{(page - 1) * 50 + index + 1}</Td>
+                  <Td className="text-[var(--ad-muted)]">{(page - 1) * ROWS_PER_PAGE + index + 1}</Td>
                   <Td className="font-mono">{row.phone}</Td>
                   <Td className="font-semibold text-white">{row.memberName}</Td>
                   <Td>₩{Number(row.amount).toLocaleString()}</Td>
                   <Td>{row.recordedDate}</Td>
                   <Td>{row.assignedStaffName || <span className="text-[var(--ad-muted)]">미배정</span>}</Td>
                   <Td>
-                    <Button
+                    <button
                       type="button"
-                      variant={row.notes ? 'secondary' : 'ghost'}
-                      size="sm"
-                      className="gap-1.5"
+                      className={`inline-flex max-w-[280px] items-start gap-1.5 rounded-md px-2.5 py-1.5 text-left text-xs transition-colors ${
+                        row.notes
+                          ? 'bg-[var(--ad-panel-hover)] text-[#E2E8F0] hover:bg-[var(--ad-gold-bg)] hover:text-white'
+                          : 'text-[var(--ad-muted)] hover:bg-[var(--ad-panel-hover)] hover:text-white'
+                      }`}
                       onClick={() => openRowNote(row)}
+                      title={row.notes || '행 메모 작성'}
                     >
-                      <MessageSquareText size={14} />
-                      {row.notes ? '메모 있음' : '메모'}
-                    </Button>
+                      <MessageSquareText size={14} className="mt-0.5 shrink-0" />
+                      <span className="whitespace-pre-wrap break-words">{row.notes || '메모 작성'}</span>
+                    </button>
                   </Td>
                 </tr>
               ))}

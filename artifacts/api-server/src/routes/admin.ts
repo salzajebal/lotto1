@@ -1246,7 +1246,7 @@ router.get("/admin/databases/:id/rows", async (req, res): Promise<void> => {
     return;
   }
   const page = Math.max(1, int(req.query.page, 1));
-  const limit = Math.min(100, Math.max(1, int(req.query.limit, 50)));
+  const limit = Math.min(200, Math.max(1, int(req.query.limit, 50)));
   const search = text(req.query.search);
   const filters = [eq(analysisDatabaseRowsTable.databaseId, databaseId)];
   if (!isOwner(req)) {
@@ -1262,6 +1262,7 @@ router.get("/admin/databases/:id/rows", async (req, res): Promise<void> => {
     filters.push(or(
       ilike(analysisDatabaseRowsTable.phone, `%${search}%`),
       ilike(analysisDatabaseRowsTable.memberName, `%${search}%`),
+      ilike(analysisDatabaseRowsTable.notes, `%${search}%`),
       sql`${analysisDatabaseRowsTable.recordedDate}::text ilike ${`%${search}%`}`,
     )!);
   }

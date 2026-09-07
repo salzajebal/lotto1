@@ -138,7 +138,7 @@ export function PortalHome({
               </div>
               <div className="portal-footer-contact-card portal-footer-contact-card--owner">
                 <b>대표자</b>
-                <span>이은수</span>
+                <span>우주환</span>
                 <small>법인명 : 주식회사 로또리코</small>
                 <small>경기도 파주시 광탄면 278</small>
               </div>
