@@ -3,9 +3,9 @@ import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-quer
 import {
   ArrowRight,
   Check,
-  Headphones,
   Menu,
   MessageCircle,
+  Phone,
   Play,
   X,
 } from 'lucide-react';
@@ -53,7 +53,7 @@ const heroStoryImages = [
   { image: winningTicketImage1239, draw: '1239회', title: '당첨 용지 증빙' },
 ];
 
-type ModalName = 'review' | 'support' | 'auth' | 'membership' | 'video' | null;
+type ModalName = 'review' | 'auth' | 'membership' | 'video' | 'refund' | null;
 
 type PublicReview = {
   id: number;
@@ -87,11 +87,6 @@ type PublicCommunityPage = {
   };
 };
 
-type PublicSiteSettings = {
-  kakaoChannelUrl: string;
-  kakaoButtonLabel: string;
-};
-
 async function fetchPublicData<T>(url: string): Promise<T> {
   const response = await fetch(url);
   if (!response.ok) throw new Error('공개 콘텐츠를 불러오지 못했습니다.');
@@ -122,14 +117,6 @@ function usePublishedCommunityPage(page: number) {
   });
 }
 
-function usePublicSiteSettings() {
-  return useQuery({
-    queryKey: ['publicSiteSettings'],
-    queryFn: () => fetchPublicData<PublicSiteSettings>('/api/site-settings'),
-    staleTime: 60_000,
-  });
-}
-
 const formatAmount = (amount: number) => amount > 0 ? `당첨금 ${amount.toLocaleString('ko-KR')}원` : '당첨금액 비공개';
 const formatDate = (date: string) => new Intl.DateTimeFormat('ko-KR', { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(date));
 const initials = (name: string) => name.trim().slice(0, 2).toUpperCase() || '회원';
@@ -157,37 +144,9 @@ function Modal({
   );
 }
 
-function KakaoChannelAction({
-  className = '',
-  children,
-  icon = <MessageCircle size={15} />,
-}: {
-  className?: string;
-  children?: ReactNode;
-  icon?: ReactNode;
-}) {
-  const { data, isLoading, isError } = usePublicSiteSettings();
-  const label = children ?? data?.kakaoButtonLabel ?? '카카오톡 채널 상담';
-  const classes = className ? `kakao-channel-action ${className}` : 'kakao-channel-action';
-
-  if (isLoading) {
-    return <span className={`${classes} kakao-link-disabled`} aria-disabled="true">{icon} 카카오톡 상담 설정 확인 중</span>;
-  }
-
-  if (isError || !data?.kakaoChannelUrl) {
-    return <span className={`${classes} kakao-link-disabled`} aria-disabled="true">{icon} 카카오톡 상담 준비 중</span>;
-  }
-
-  return <a className={classes} href={data.kakaoChannelUrl} target="_blank" rel="noreferrer" aria-label={`${typeof label === 'string' ? label : '카카오톡 채널 상담'} 새 창에서 열기`}>{icon}{label}</a>;
-}
-
-function KakaoButtonLabel() {
-  const { data } = usePublicSiteSettings();
-  return <>{data?.kakaoButtonLabel ?? '카카오톡 채널 상담'}</>;
-}
-
 function Home() {
-  const [modal, setModal] = useState<ModalName>(null);
+  const [modal, setModal] = useState<ModalName>('refund');
+  const [refundFormOpen, setRefundFormOpen] = useState(false);
   const [membershipPlan, setMembershipPlan] = useState<'vip' | 'premium'>('premium');
   const [authMode, setAuthMode] = useState<'login' | 'join'>('login');
   const [submitted, setSubmitted] = useState(false);
@@ -224,6 +183,7 @@ function Home() {
   const openModal = (name: ModalName) => {
     setSubmitted(false);
     setSubmitError('');
+    setRefundFormOpen(false);
     setModal(name);
     setMenuOpen(false);
   };
@@ -237,11 +197,13 @@ function Home() {
     setSubmitting(true);
     setSubmitError('');
     try {
-      if (modal === 'support' || modal === 'membership') {
+      if (modal === 'membership' || modal === 'refund') {
         const isMembership = modal === 'membership';
-        const name = String(formData.get('name') || (isMembership ? '멤버십 상담 신청자' : '홈페이지 문의자'));
+        const isRefund = modal === 'refund';
+        const defaultName = isMembership ? '멤버십 신청자' : '홈페이지 문의자';
+        const name = String(formData.get('name') || (isRefund ? '환불 신청자' : defaultName));
         const contact = String(formData.get('contact') || '');
-        const category = String(formData.get('category') || (isMembership ? '멤버십 상담' : '일반 문의'));
+        const category = String(formData.get('category') || (isMembership ? '멤버십 신청' : isRefund ? '환불 신청' : '일반 문의'));
         const message = String(formData.get('message') || '');
         const response = await fetch('/api/support', {
           method: 'POST',
@@ -367,9 +329,9 @@ function Home() {
               <button className="hero-quick-card quick-gold" onClick={() => openModal('membership')}>
                 <span className="quick-icon">VIP</span><strong>멤버십 서비스 안내</strong><small>전문가의 분석 번호를<br />멤버십으로 받아보세요</small><b>자세히 보기</b>
               </button>
-              <KakaoChannelAction className="hero-quick-card quick-blue" icon={<Headphones className="quick-svg" />}>
-                <strong>고객센터</strong><small>궁금한 점이 있으신가요?<br />언제든지 문의주세요.</small><b><KakaoButtonLabel /></b>
-              </KakaoChannelAction>
+              <a className="hero-quick-card quick-blue" href="tel:070-8095-3814" aria-label="환불 보상 상담 전화 070-8095-3814">
+                <Phone className="quick-svg" /><strong>환불 보상 상담</strong><small>환불 및 보상 관련 문의는<br />전용 전화로 안내합니다.</small><b>070-8095-3814</b>
+              </a>
               <Link className="hero-quick-card quick-purple" href="/community">
                 <MessageCircle className="quick-svg" /><strong>커뮤니티</strong><small>당첨 후기 공유, 정보 교류<br />함께하는 로또 커뮤니티</small><b>바로가기</b>
               </Link>
@@ -391,17 +353,16 @@ function Home() {
           postsError={postsError}
           onModal={openModal}
           onMembership={openMembershipModal}
-          renderKakao={(className) => <KakaoChannelAction className={className}><KakaoButtonLabel /></KakaoChannelAction>}
           trustBadges={customerTrustBadges}
            winningTicketImages={winningTicketImages}
         />
       </main>
 
       {modal === 'review' && <Modal title="당첨 후기를 남겨주세요" description="회원님의 기록이 다음 사람에게는 가장 현실적인 기준이 됩니다." onClose={() => setModal(null)}>{submitted ? <div className="success-note">후기가 접수되었습니다. 검토 후 당첨 아카이브에 반영됩니다.</div> : <form className="form" onSubmit={submitForm}><label>닉네임<input name="memberName" required placeholder="공개할 이름을 입력하세요" /></label><label>당첨 회차<input name="drawAndRank" required placeholder="예: 1184회 / 3등" /></label><label>후기<textarea name="content" required placeholder="분석을 시작한 계기와 경험을 들려주세요." /></label>{submitError && <div className="form-error">{submitError}</div>}<button className="gold-button" type="submit" disabled={submitting}>{submitting ? '접수 중...' : '후기 제출하기'} <ArrowRight size={15} /></button></form>}</Modal>}
-      {modal === 'support' && <Modal title="고객센터 문의" description="대표번호 대신 카카오톡 채널로 빠르고 정확하게 상담합니다." onClose={() => setModal(null)}>{submitted ? <div className="success-note">문의가 접수되었습니다. 카카오톡 채널에서 답변을 확인해주세요.</div> : <><KakaoChannelAction className="gold-button modal-kakao-action" /><form className="form" onSubmit={submitForm}><label>문의 유형<input name="category" required placeholder="멤버십 / 분석 번호 / 결제 등" /></label><label>연락받을 카카오톡 아이디<input name="contact" required placeholder="카카오톡 채널 상담을 위해 필요합니다" /></label><label>문의 내용<textarea name="message" required placeholder="궁금한 내용을 남겨주세요." /></label>{submitError && <div className="form-error">{submitError}</div>}<button className="gold-button" type="submit" disabled={submitting}>{submitting ? '접수 중...' : '문의 접수하기'} <MessageCircle size={15} /></button></form></>}</Modal>}
       {modal === 'auth' && <Modal title={authMode === 'login' ? '다시 만나서 반갑습니다' : '로또리코 시작하기'} description={authMode === 'login' ? '아이디와 비밀번호로 로그인하세요.' : '가입 신청 후 관리자 승인 절차를 거쳐 안내드립니다.'} onClose={() => setModal(null)}><div className="auth-switch"><button className={authMode === 'login' ? 'active' : ''} onClick={() => { setAuthMode('login'); setSubmitted(false); setSubmitError(''); }}>로그인</button><button className={authMode === 'join' ? 'active' : ''} onClick={() => { setAuthMode('join'); setSubmitted(false); setSubmitError(''); }}>회원가입</button></div>{submitted ? <div className="success-note">{authMode === 'login' ? '로그인되었습니다.' : '가입 신청이 접수되었습니다. 관리자 승인 후 로그인할 수 있습니다.'}</div> : <form className="form" onSubmit={submitForm}><label>아이디<input name="username" required minLength={3} maxLength={32} autoComplete="username" placeholder="아이디를 입력하세요" /></label><label>비밀번호<input name="password" required minLength={6} maxLength={100} type="password" autoComplete={authMode === 'login' ? 'current-password' : 'new-password'} placeholder="6자 이상 입력하세요" /></label>{authMode === 'join' && <><label>이름<input name="name" required maxLength={80} placeholder="이름을 입력하세요" /></label><label>전화번호<input name="phone" required type="tel" minLength={8} maxLength={30} autoComplete="tel" placeholder="010-0000-0000" /></label></>}{submitError && <div className="form-error">{submitError}</div>}<button className="gold-button" type="submit" disabled={submitting}>{submitting ? (authMode === 'login' ? '로그인 중...' : '신청 중...') : authMode === 'login' ? '로그인하기' : '회원가입 신청하기'} <ArrowRight size={15} /></button></form>}</Modal>}
-      {modal === 'membership' && <Modal title="멤버십 상담 신청" description="신청 내용을 확인한 뒤 카카오톡 채널로 자세한 안내를 드립니다." onClose={() => setModal(null)}>{submitted ? <div className="success-note">상담 신청이 접수되었습니다. 카카오톡 채널로 곧 안내드리겠습니다.</div> : <><KakaoChannelAction className="gold-button modal-kakao-action" /><form className="form" onSubmit={submitForm}><label>성함<input name="name" required placeholder="상담받으실 성함" /></label><label>카카오톡 아이디<input name="contact" required placeholder="답변받으실 카카오톡 아이디" /></label><label>관심 플랜<input name="category" value={membershipPlan === 'vip' ? '1·2등 VIP 상담' : '3등 분석 번호 멤버십 / 330,000원'} readOnly /></label><label>상담 메모<textarea name="message" required placeholder={membershipPlan === 'vip' ? 'VIP 상담에서 확인하고 싶은 내용을 적어주세요.' : '상담받고 싶은 내용을 적어주세요.'} /></label>{submitError && <div className="form-error">{submitError}</div>}<button className="gold-button" type="submit" disabled={submitting}>{submitting ? '신청 중...' : '상담 신청하기'} <ArrowRight size={15} /></button></form></>}</Modal>}
+      {modal === 'membership' && <Modal title="멤버십 신청" description="신청 내용을 확인한 뒤 입력하신 연락처로 안내드립니다." onClose={() => setModal(null)}>{submitted ? <div className="success-note">멤버십 신청이 접수되었습니다. 담당자가 확인 후 안내드리겠습니다.</div> : <form className="form" onSubmit={submitForm}><label>성함<input name="name" required placeholder="신청하실 성함" /></label><label>연락처<input name="contact" required placeholder="안내받으실 연락처" /></label><label>관심 플랜<input name="category" value={membershipPlan === 'vip' ? '1·2등 VIP 안내' : '3등 분석 번호 멤버십 / 330,000원'} readOnly /></label><label>신청 메모<textarea name="message" required placeholder={membershipPlan === 'vip' ? 'VIP 서비스에서 확인하고 싶은 내용을 적어주세요.' : '신청 관련 내용을 적어주세요.'} /></label>{submitError && <div className="form-error">{submitError}</div>}<button className="gold-button" type="submit" disabled={submitting}>{submitting ? '신청 중...' : '멤버십 신청하기'} <ArrowRight size={15} /></button></form>}</Modal>}
       {modal === 'video' && <Modal title="당첨 회원 인터뷰 준비 중" description="관리자가 검증한 회원 인터뷰만 공개합니다." onClose={() => setModal(null)}><div style={{ aspectRatio: '16 / 9', display: 'grid', placeItems: 'center', background: 'radial-gradient(circle, #7b571b, #101318 63%)', border: '1px solid #685127' }}><span className="video-play" style={{ position: 'static', transform: 'none' }}><Play size={23} fill="currentColor" /></span></div><p style={{ margin: '18px 0 0' }}>현재 공개 가능한 검증 자료를 준비하고 있습니다. 확인되지 않은 영상이나 당첨 정보는 표시하지 않습니다.</p></Modal>}
+      {modal === 'refund' && <Modal title="주식회사 로또리코 공식 안내문" description="고객 여러분께 드리는 사과의 말씀과 환불 접수 안내" onClose={() => setModal(null)}>{submitted ? <div className="success-note">환불 신청이 접수되었습니다. 담당자가 확인 후 순차적으로 연락드리겠습니다.</div> : <div className="refund-content"><div className="refund-notice"><p>안녕하세요. <strong>주식회사 로또리코</strong>입니다.</p><p>그동안 저희 서비스를 믿고 이용해주신 고객 여러분께 깊은 감사의 말씀을 드리며, 서비스 이용에 불편을 드린 점 진심으로 사과드립니다.</p><p>당사는 고객님들의 소중한 의견을 수렴하여, 서비스 만족도가 미흡하셨던 분들을 대상으로 환불 절차를 진행하고자 합니다. 접수해주신 내용을 바탕으로 신속하고 정확하게 처리해드릴 것을 약속드립니다.</p><p>환불을 원하시는 고객님께서는 아래 '환불 신청하기' 버튼을 눌러 신청 양식을 작성해주시기 바랍니다.</p><p>다시 한번 죄송한 말씀 전하며, 끝까지 책임지는 자세로 임하겠습니다.</p></div>{!refundFormOpen ? <div className="modal-actions"><button className="outline-button" onClick={() => setModal(null)}>닫기</button><button className="gold-button" onClick={() => setRefundFormOpen(true)}>환불 신청하기</button></div> : <form className="form refund-form" onSubmit={submitForm} style={{ marginTop: '26px', borderTop: '1px solid #2d3138', paddingTop: '26px' }}><div className="refund-form-header" style={{ marginBottom: '16px', borderBottom: 'none', paddingBottom: 0 }}><h3>환불 접수 양식</h3><p style={{ margin: 0, color: '#888e98', fontSize: '12px' }}>결제하신 금액과 환불을 요청하시는 신청금액을 반드시 포함하여 작성해주세요.</p></div><input type="hidden" name="category" value="환불 신청" /><label>이름<input name="name" required placeholder="가입하신 성함을 입력해주세요" /></label><label>연락처<input name="contact" required placeholder="연락 가능한 휴대전화 번호" /></label><label>환불 신청금액 및 내용<textarea name="message" required placeholder="결제하신 금액과 환불을 요청하시는 신청금액을 반드시 포함하여 작성해주세요." rows={3} /></label>{submitError && <div className="form-error">{submitError}</div>}<div className="modal-actions" style={{ marginTop: '18px' }}><button className="outline-button" type="button" onClick={() => setRefundFormOpen(false)}>취소</button><button className="gold-button" type="submit" disabled={submitting}>{submitting ? '접수 중...' : '환불 신청 제출'} <ArrowRight size={15} /></button></div></form>}</div>}</Modal>}
     </div>
   );
 }
@@ -443,7 +404,7 @@ function PublicPageFooter() {
             <div><strong>EXPLORE</strong><Link href="/reviews">당첨 후기</Link><Link href="/community">커뮤니티</Link><Link href="/#membership">멤버십</Link></div>
             <div><strong>HELP</strong><Link href="/#support">고객센터</Link><Link href="/#top">홈페이지</Link></div>
           </div>
-          <div className="footer-call"><strong>카카오톡 채널 상담</strong><span>대표번호 없이, 카카오톡으로만 상담합니다.</span><KakaoChannelAction className="gold footer-kakao-link" icon={<ArrowRight size={12} />}><KakaoButtonLabel /></KakaoChannelAction></div>
+          <div className="footer-call"><strong>환불 보상 상담 전화</strong><span>환불 및 보상 관련 문의 전용 번호입니다.</span><a className="gold footer-kakao-link" href="tel:070-8095-3814"><Phone size={12} />070-8095-3814</a></div>
         </div>
         <div className="footer-bottom"><span>© 2025 LOTTORICO. ALL RIGHTS RESERVED.</span><span>이용약관　개인정보처리방침</span></div>
       </div>

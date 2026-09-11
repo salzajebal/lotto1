@@ -1486,9 +1486,11 @@ router.post("/admin/databases/:id/unassign", requireOwner, async (req, res): Pro
 
 router.get("/admin/inquiries", async (req, res): Promise<void> => {
   const status = text(req.query.status);
+  const category = text(req.query.category);
   const page = Math.max(1, int(req.query.page, 1));
   const limit = 10;
   const filters = status && status !== "all" ? [eq(supportInquiriesTable.status, status)] : [];
+  if (category && category !== "all") filters.push(eq(supportInquiriesTable.category, category));
   if (!isOwner(req)) filters.push(eq(supportInquiriesTable.assignedStaffId, req.adminUser!.id));
   const where = filters.length ? and(...filters) : undefined;
   const [[count], rows] = await Promise.all([

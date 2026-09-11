@@ -1,23 +1,12 @@
-import { useEffect, useState } from 'react';
-import { ExternalLink, KeyRound, MessageCircle, ShieldCheck, UserRound } from 'lucide-react';
-import { useAdminSiteSettings, useUpdateAdminProfile, useUpdateSiteSettings } from '../api';
+import { useState } from 'react';
+import { KeyRound, ShieldCheck, UserRound } from 'lucide-react';
+import { useUpdateAdminProfile } from '../api';
 import { Button, Card, Input, Label } from '../components/UI';
 
 export default function SettingsView({ user }: { user: { name: string; username: string; email: string; role: string } }) {
   const [name, setName] = useState(user.name);
   const [password, setPassword] = useState('');
-  const [kakaoChannelUrl, setKakaoChannelUrl] = useState('');
-  const [kakaoButtonLabel, setKakaoButtonLabel] = useState('카카오톡 채널 상담');
   const updateProfile = useUpdateAdminProfile();
-  const { data: siteSettings, isLoading: siteSettingsLoading, isError: siteSettingsError } = useAdminSiteSettings();
-  const updateSiteSettings = useUpdateSiteSettings();
-  const isOwner = user.role === 'owner';
-
-  useEffect(() => {
-    if (!siteSettings) return;
-    setKakaoChannelUrl(siteSettings.kakaoChannelUrl);
-    setKakaoButtonLabel(siteSettings.kakaoButtonLabel);
-  }, [siteSettings]);
 
   const submit = (event: React.FormEvent) => {
     event.preventDefault();
@@ -25,11 +14,6 @@ export default function SettingsView({ user }: { user: { name: string; username:
       { name, ...(password ? { password } : {}) },
       { onSuccess: () => setPassword('') },
     );
-  };
-
-  const submitSiteSettings = (event: React.FormEvent) => {
-    event.preventDefault();
-    updateSiteSettings.mutate({ kakaoChannelUrl, kakaoButtonLabel });
   };
 
   return (
@@ -70,53 +54,6 @@ export default function SettingsView({ user }: { user: { name: string; username:
             </form>
           </Card>
 
-          {isOwner && (
-            <Card>
-              <div className="flex items-center gap-3 mb-6">
-                <span className="w-10 h-10 grid place-items-center rounded-md bg-[var(--ad-info-bg)] text-[var(--ad-info)]"><MessageCircle size={19} /></span>
-                <div>
-                  <h2 className="font-bold text-white">카카오톡 상담 채널</h2>
-                  <p className="text-xs text-[var(--ad-muted)]">공개 페이지의 상담 버튼에 연결됩니다.</p>
-                </div>
-              </div>
-              {siteSettingsError && <div className="mb-4 rounded-md border border-[#7B3C3C] bg-[#3B1A1A] px-3 py-2 text-xs text-[#F0A6A6]">상담 채널 설정을 불러오지 못했습니다.</div>}
-              <form className="space-y-5" onSubmit={submitSiteSettings}>
-                <div>
-                  <Label>카카오톡 채널 URL</Label>
-                  <Input
-                    type="url"
-                    value={kakaoChannelUrl}
-                    onChange={(event) => setKakaoChannelUrl(event.target.value)}
-                    placeholder="https://pf.kakao.com/_채널코드"
-                    disabled={siteSettingsLoading}
-                  />
-                  <p className="mt-2 text-xs leading-5 text-[var(--ad-muted)]">카카오톡 채널 홈 주소 또는 /chat 주소를 입력하세요. https://pf.kakao.com/_채널코드 형식만 저장할 수 있으며, 비워서 저장하면 공개 상담 버튼이 준비 중 상태로 표시됩니다.</p>
-                </div>
-                <div>
-                  <Label>버튼 문구</Label>
-                  <Input
-                    required
-                    minLength={2}
-                    maxLength={40}
-                    value={kakaoButtonLabel}
-                    onChange={(event) => setKakaoButtonLabel(event.target.value)}
-                    placeholder="카카오톡 채널 상담"
-                    disabled={siteSettingsLoading}
-                  />
-                </div>
-                <div className="flex flex-wrap items-center gap-3">
-                  <Button type="submit" disabled={siteSettingsLoading || updateSiteSettings.isPending}>
-                    {updateSiteSettings.isPending ? '저장 중...' : '상담 채널 저장'}
-                  </Button>
-                  {siteSettings?.kakaoChannelUrl && (
-                    <a className="inline-flex items-center gap-1.5 text-xs text-[var(--ad-info)] hover:underline" href={siteSettings.kakaoChannelUrl} target="_blank" rel="noreferrer">
-                      현재 저장된 채널 열기 <ExternalLink size={13} />
-                    </a>
-                  )}
-                </div>
-              </form>
-            </Card>
-          )}
         </div>
 
         <div className="space-y-4">

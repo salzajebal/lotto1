@@ -1,5 +1,4 @@
-import type { ReactNode } from 'react';
-import { ArrowRight, BarChart3, Check, ChevronRight, FileCheck2, MessageCircle, Play, ShieldCheck, Trophy, Users } from 'lucide-react';
+import { ArrowRight, BarChart3, Check, ChevronRight, FileCheck2, MessageCircle, Phone, Play, ShieldCheck, Trophy, Users } from 'lucide-react';
 import { Link } from 'wouter';
 import interviewImageOne from '@assets/image_1788153329574.png';
 import interviewImageTwo from '@assets/image_1788153332657.png';
@@ -29,7 +28,7 @@ const date = (value: string) => new Intl.DateTimeFormat('ko-KR', { year: 'numeri
 const BallRow = ({ draw }: { draw: number }) => <div className="portal-balls" aria-label={`${draw}회 분석 기록`}><span>{String(draw).slice(-2).padStart(2, '0')}</span><span>08</span><span>14</span><span>23</span><span>33</span><span>45</span></div>;
 
 export function PortalHome({
-  reviews, posts, reviewsLoading, reviewsError, postsLoading, postsError, onModal, onMembership, renderKakao, trustBadges, winningTicketImages,
+  reviews, posts, reviewsLoading, reviewsError, postsLoading, postsError, onModal, onMembership, trustBadges, winningTicketImages,
 }: {
   reviews: Review[];
   posts: Post[];
@@ -37,9 +36,8 @@ export function PortalHome({
   reviewsError: boolean;
   postsLoading: boolean;
   postsError: boolean;
-  onModal: (name: 'review' | 'support' | 'membership' | 'video') => void;
+  onModal: (name: 'review' | 'membership' | 'video' | 'refund') => void;
   onMembership: (plan: 'vip' | 'premium') => void;
-  renderKakao: (className: string) => ReactNode;
   trustBadges: { src: string; alt: string; label: string }[];
   winningTicketImages: string[];
 }) {
@@ -116,8 +114,8 @@ export function PortalHome({
     </section>
     <section className="shell portal-section portal-lower" id="method"><div className="portal-method"><p className="portal-eyebrow">03 / OUR METHOD</p><h2>분석 기준을<br /><em>숨기지 않습니다.</em></h2><p>매주 같은 순서로 데이터를 읽고, 결과를 다시 기록합니다.</p>{[{ Icon: BarChart3, title: '출현 빈도와 간격', desc: '최근 회차의 출현 횟수와 재등장 주기를 비교합니다.' }, { Icon: ShieldCheck, title: '조합 밸런스', desc: '홀짝·저고·끝수·연속수·총합을 점검합니다.' }, { Icon: Check, title: '결과 복기와 보정', desc: '실제 결과를 다음 주 필터에 반영합니다.' }].map(({ Icon, title, desc }, index) => <div className="portal-method-row" key={title}><b>0{index + 1}</b><Icon size={18} /><span><strong>{title}</strong><small>{desc}</small></span></div>)}</div>
       <aside className="portal-community" id="community"><div className="portal-side-head"><span className="portal-eyebrow">COMMUNITY LOUNGE</span><Link data-testid="link-all-community" className="portal-text-link" href="/community">전체보기 <ChevronRight size={13} /></Link></div><h3>이번 주 회원 기록</h3>{recentPosts.map(post => <Link className="portal-post" key={post.id} href="/community" data-testid={`link-community-post-${post.id}`}><span>{post.authorName.slice(0, 1)}</span><span><b>{post.authorName} · {post.category}</b><small>“{post.title} — {post.content}”</small></span><ChevronRight size={14} /></Link>)}{postsLoading && <div className="public-empty">커뮤니티를 불러오는 중입니다.</div>}{postsError && <div className="public-empty public-error">커뮤니티를 불러오지 못했습니다.</div>}{!postsLoading && !postsError && !recentPosts.length && <div className="public-empty">공개된 회원 기록이 아직 없습니다.</div>}<Link data-testid="link-community-entry" className="portal-community-cta" href="/community"><Users size={15} /> 커뮤니티 입장하기</Link></aside></section>
-     <section className="shell portal-membership" id="membership"><div className="portal-membership-intro"><p className="portal-eyebrow gold">LOTTORICO MEMBERSHIP</p><h2>이번 주 분석 기준을<br /><em>회원 전용으로 받아보세요.</em></h2><p>주간 분석 번호 · 리포트 · 결과 복기 · 회원 커뮤니티</p></div><div className="portal-membership-offers"><article className="portal-offer portal-offer-vip"><small>1·2등 분석 번호</small><strong>VIP 상담</strong><p>회원님의 목표에 맞춘<br />맞춤 상담으로 안내합니다.</p><button data-testid="button-vip-consult" onClick={() => onMembership('vip')}>VIP 상담 <ArrowRight size={15} /></button></article><article className="portal-offer portal-offer-premium"><small>3등 멤버십 / 1년</small><strong>330,000<em>원</em></strong><button data-testid="button-membership-consult" onClick={() => onMembership('premium')}>가입 상담 <ArrowRight size={15} /></button></article></div></section>
-     <section className="shell portal-support" id="support"><div><p className="portal-eyebrow">CUSTOMER CENTER</p><h2>궁금한 점은<br /><em>카카오톡으로 물어보세요.</em></h2><p>1·2등 분석 번호는 회원님의 목표에 맞춘 별도 상담으로 안내합니다.</p></div><div className="portal-support-actions">{renderKakao('portal-support-button')}<button data-testid="button-support-inquiry" className="portal-support-inquiry" onClick={() => onModal('support')}><MessageCircle size={15} /> 문의 남기기</button></div></section>
+     <section className="shell portal-membership" id="membership"><div className="portal-membership-intro"><p className="portal-eyebrow gold">LOTTORICO MEMBERSHIP</p><h2>이번 주 분석 기준을<br /><em>회원 전용으로 받아보세요.</em></h2><p>주간 분석 번호 · 리포트 · 결과 복기 · 회원 커뮤니티</p></div><div className="portal-membership-offers"><article className="portal-offer portal-offer-vip"><small>1·2등 분석 번호</small><strong>VIP 안내</strong><p>회원님의 목표에 맞춘<br />서비스 내용을 확인하세요.</p><button data-testid="button-vip-consult" onClick={() => onMembership('vip')}>VIP 신청 <ArrowRight size={15} /></button></article><article className="portal-offer portal-offer-premium"><small>3등 멤버십 / 1년</small><strong>330,000<em>원</em></strong><button data-testid="button-membership-consult" onClick={() => onMembership('premium')}>가입 신청 <ArrowRight size={15} /></button></article></div></section>
+     <section className="shell portal-support" id="support"><div><p className="portal-eyebrow">REFUND SUPPORT</p><h2>환불·보상 문의는<br /><em>전용 전화로 안내합니다.</em></h2><p>환불 신청서를 제출하거나 전용 상담 번호로 문의해주세요.</p></div><div className="portal-support-actions"><a className="portal-support-button" href="tel:070-8095-3814" aria-label="환불 보상 상담 전화 070-8095-3814"><Phone size={16} /> 070-8095-3814</a><button data-testid="button-refund-inquiry" className="portal-support-inquiry" onClick={() => onModal('refund')}><MessageCircle size={15} /> 환불 신청하기</button></div></section>
     <section className="portal-review-strip"><div className="shell"><div><p className="portal-eyebrow">MEMBER REVIEW</p><h2>회원 후기</h2><p>고객이 직접 제출하고 검토 후 공개한 실제 기록입니다.</p></div><div>{recentReviews[0] ? <blockquote>“{recentReviews[0].content}”<small>{recentReviews[0].memberName} · {recentReviews[0].rank}</small></blockquote> : <div className="public-empty">공개된 회원 후기가 아직 없습니다.</div>}<button data-testid="button-write-review" className="portal-review-button" onClick={() => onModal('review')}>후기 작성하기 <MessageCircle size={15} /></button></div></div></section>
       <section className="portal-trust-info" id="trust-info" aria-label="고객만족도 및 신뢰 정보"><div className="shell"><div className="portal-trust-info-content"><div className="portal-trust-badge-viewport"><div className="portal-trust-badge-track"><div className="portal-trust-badge-set">{trustBadges.map((badge) => <div className="portal-trust-badge" key={badge.src}><div className="portal-trust-badge-logo"><img src={badge.src} alt={badge.alt} /></div><p className="portal-trust-badge-label">{badge.label}</p></div>)}</div><div className="portal-trust-badge-set" aria-hidden="true">{trustBadges.map((badge) => <div className="portal-trust-badge" key={`clone-${badge.src}`}><div className="portal-trust-badge-logo"><img src={badge.src} alt="" /></div><p className="portal-trust-badge-label">{badge.label}</p></div>)}</div></div></div></div></div></section>
       <footer className="portal-footer" aria-label="로또리코 사이트 정보">
@@ -133,8 +131,8 @@ export function PortalHome({
             </div>
             <div className="portal-footer-contact" aria-label="고객센터 및 대표자 정보">
               <div className="portal-footer-contact-card">
-                <b>고객센터</b>
-                <a href="tel:070-8058-9742" aria-label="고객센터 전화 070-8058-9742">070-8058-9742</a>
+                <b>환불 보상 상담 전화</b>
+                <a href="tel:070-8095-3814" aria-label="환불 보상 상담 전화 070-8095-3814">070-8095-3814</a>
               </div>
               <div className="portal-footer-contact-card portal-footer-contact-card--owner">
                 <b>대표자</b>

@@ -5,8 +5,13 @@ import { Loader2, MessageCircle, Send, Plus } from 'lucide-react';
 
 export default function InquiriesView({ user }: { user: { role: string } }) {
   const [statusFilter, setStatusFilter] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState('all');
   const [page, setPage] = useState(1);
-  const { data, isLoading } = useInquiries({ status: statusFilter !== 'all' ? statusFilter : undefined, page });
+  const { data, isLoading } = useInquiries({
+    status: statusFilter !== 'all' ? statusFilter : undefined,
+    category: categoryFilter !== 'all' ? categoryFilter : undefined,
+    page,
+  });
   const inquiries = data?.items || [];
   const pagination = data?.pagination;
   const { data: staffList } = useStaff();
@@ -118,6 +123,12 @@ export default function InquiriesView({ user }: { user: { role: string } }) {
           </div>
           <div className="flex items-center gap-2">
             <Button onClick={() => setCreateModalOpen(true)} className="gap-1.5"><Plus size={15} /> 새 문의 등록</Button>
+            <Select className="w-32" value={categoryFilter} onChange={e => { setCategoryFilter(e.target.value); setPage(1); }}>
+              <option value="all">전체 유형</option>
+              <option value="환불 신청">환불 신청</option>
+              <option value="일반 문의">일반 문의</option>
+              <option value="멤버십 신청">멤버십 신청</option>
+            </Select>
             <Select className="w-32" value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }}>
               <option value="all">전체 상태</option>
               <option value="new">신규</option>
@@ -154,7 +165,9 @@ export default function InquiriesView({ user }: { user: { role: string } }) {
                       <Td>{getStatusBadge(iq.status)}</Td>
                       <Td>{getPriorityBadge(iq.priority)}</Td>
                       <Td className="font-semibold text-white">{iq.name}</Td>
-                      <Td className="truncate max-w-[200px] text-[var(--ad-muted)]">{iq.subject}</Td>
+                      <Td className="truncate max-w-[200px] text-[var(--ad-muted)]">
+                        {iq.category === '환불 신청' ? <Badge variant="warning">환불 신청</Badge> : iq.subject}
+                      </Td>
                       <Td>{iq.staffName || '-'}</Td>
                       <Td className="text-[var(--ad-muted)] text-xs">{new Date(iq.createdAt).toLocaleDateString()}</Td>
                     </tr>
@@ -290,7 +303,7 @@ export default function InquiriesView({ user }: { user: { role: string } }) {
             </div>
             <div>
               <Label>연락처 *</Label>
-              <Input required maxLength={120} value={form.contact} onChange={e => setForm({ ...form, contact: e.target.value })} placeholder="전화번호 또는 카카오톡 ID" />
+              <Input required maxLength={120} value={form.contact} onChange={e => setForm({ ...form, contact: e.target.value })} placeholder="연락 가능한 전화번호" />
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -298,7 +311,7 @@ export default function InquiriesView({ user }: { user: { role: string } }) {
               <Label>문의 유형 *</Label>
               <Select required value={form.category} onChange={e => setForm({ ...form, category: e.target.value })}>
                 <option>일반 문의</option>
-                <option>멤버십 상담</option>
+                <option>멤버십 신청</option>
                 <option>분석 번호</option>
                 <option>결제</option>
                 <option>기타</option>
