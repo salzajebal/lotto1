@@ -215,6 +215,26 @@ SOURCE_DATABASE_URL='원본_DB_URL' node scripts/migrate-data.js
 
 복원 중 오류가 나면 전체 트랜잭션이 롤백되므로 이전 대상 DB 상태가 유지됩니다. 별도 수동 복구가 필요한 경우 사전 백업을 사용합니다.
 
+### 데이터 이전 후 원본·대상 전수 비교
+
+데이터 이전이 끝난 뒤 같은 SSH 세션에서 다음 명령을 실행합니다.
+
+```bash
+pnpm run verify:data
+```
+
+이 검증은 원본 Replit DB와 Lightsail 로컬 DB의 테이블 목록, 컬럼·제약조건·인덱스·트리거 구조, 모든 테이블 행의 전체 내용 해시, 행 수, 시퀀스 상태를 비교합니다. 성공하면 다음 문구가 표시됩니다.
+
+```text
+검증 성공: 구조, 전체 테이블 행 수·내용, 시퀀스 상태가 모두 일치합니다.
+```
+
+완료 후 원본 DB 주소를 현재 셸에서 제거합니다.
+
+```bash
+unset SOURCE_DATABASE_URL
+```
+
 ```bash
 set -a
 source <(sudo cat /etc/lotto-analysis.env)
