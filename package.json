@@ -9,6 +9,7 @@
     "start:vps": "NODE_ENV=production PORT=${PORT:-3000} pnpm --filter @workspace/api-server run start",
     "db:push": "pnpm --filter @workspace/db run push",
     "migrate:data": "node scripts/migrate-data.js",
+    "verify:data": "node scripts/verify-data-migration.js",
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"
   },
