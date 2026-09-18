@@ -36,6 +36,8 @@ fi
 
 corepack enable
 corepack prepare pnpm@10.29.3 --activate
+sudo -u "$APP_SYSTEM_USER" -H sh -c \
+  'cd "$HOME" && corepack install --global pnpm@10.29.3'
 npm install --global pm2
 
 systemctl enable --now postgresql

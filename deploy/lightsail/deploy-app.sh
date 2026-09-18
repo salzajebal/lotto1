@@ -19,6 +19,7 @@ set +a
 export NODE_ENV=production
 export PORT=3000
 export BASE_PATH="/"
+export CI=true
 
 pnpm install --frozen-lockfile
 pnpm run build:vps

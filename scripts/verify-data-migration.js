@@ -174,7 +174,7 @@ async function compareRelation(kind, relation) {
   const selectSql =
     kind === "table"
       ? `SELECT row_to_json(t)::text FROM ${relation} t ORDER BY md5(row_to_json(t)::text), convert_to(row_to_json(t)::text, 'UTF8')`
-      : `SELECT row_to_json(s)::text FROM ${relation} s`;
+      : `SELECT json_build_object('last_value', last_value, 'is_called', is_called)::text FROM ${relation}`;
   const [source, target] = await Promise.all([
     hashCopy(sourceUrl, selectSql),
     hashCopy(targetUrl, selectSql),
@@ -189,7 +189,7 @@ async function compareRelation(kind, relation) {
 }
 
 async function main() {
-  console.log("원본과 Lightsail 로컬 DB의 전체 논리 데이터 검증을 시작합니다.\n");
+  console.log("원본과 대상 로컬 DB의 전체 논리 데이터 검증을 시작합니다.\n");
 
   const [sourceTables, targetTables, sourceSequences, targetSequences] =
     await Promise.all([
